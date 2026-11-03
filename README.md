@@ -228,6 +228,7 @@ tools/make-icns.sh   sips + iconutil 生成 .icns
 | 文档 | 内容 |
 | --- | --- |
 | [docs/TECHNICAL.md](docs/TECHNICAL.md) | 完整技术文档：架构、网络层、播放链路、IPC 清单、打包与测试、故障排查 |
+| [docs/TECHNICAL-macOS.md](docs/TECHNICAL-macOS.md) | macOS 版技术文档：平台差异、播放器全屏、直播弹幕与屏蔽、GitHub Releases 更新 |
 | [docs/PORT-REPORT.md](docs/PORT-REPORT.md) | Windows 适配记录：逐条问题与验证数据（两端共用业务层，差异仅限平台层） |
 | [docs/PORT-CHANGELOG.md](docs/PORT-CHANGELOG.md) | 移植期间的逐版本改动清单（含可复制的代码块） |
 | [docs/使用说明.txt](docs/使用说明.txt) | 面向使用者的简短说明（随安装包分发） |
