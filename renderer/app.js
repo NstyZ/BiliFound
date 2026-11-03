@@ -150,6 +150,8 @@ function applySettingsUI() {
 
   check('set-autoplay', s.autoplay);
   check('set-danmaku', s.danmaku);
+  const q = $('set-quality');
+  if (q) q.value = String(Number(s.defaultQuality) || 0);
   check('set-grain', s.grain !== false);
   setVal('set-blur', s.glassBlur ?? 30);
   setText('blur-val', `${s.glassBlur ?? 30}px`);
@@ -561,6 +563,14 @@ function toast(text) {
     setTimeout(() => el.remove(), 220);
   }, 2400);
 }
+bridge.on('player-volume', (value) => {
+  const v = Math.max(0, Math.min(1, Number(value)));
+  if (!Number.isFinite(v)) return;
+  state.settings.volume = v;
+  const el = $('ctl-vol');
+  if (el) el.value = String(Math.round(v * 100));
+});
+
 bridge.on('download-toast', (d) => {
   if (!d) return;
   if (d.state === 'progress' && d.total) {
@@ -575,6 +585,8 @@ bridge.on('download-toast', (d) => {
 });
 
 /* ------------------------------ 应用内更新 ------------------------------ */
+
+const DEFAULT_UPDATE_REPO = 'https://github.com/NstyZ/BiliFound';
 
 const updateUI = { latest: '', file: '', asset: null, busy: false };
 
@@ -592,6 +604,10 @@ function paintUpdateInfo(info) {
   const ver = $('about-ver');
   if (ver) ver.textContent = `v${info.version}`;
   const feed = $('up-feed');
+  if (feed && !String((state.settings || {}).updateFeed || '').trim()) {
+    // 默认指向本项目仓库；留空也能用，但这里填上更直观
+    feed.value = DEFAULT_UPDATE_REPO;
+  }
   if (feed && !feed.value) feed.value = info.customFeed || '';
 }
 
@@ -1684,6 +1700,9 @@ async function renderVideo(bvid) {
             <button class="ctl-btn ctl-speed ctl-opt" id="ctl-speed" title="播放速度">1.0x</button>
             <button class="ctl-btn ctl-quality ctl-opt" id="ctl-quality" title="画质">画质</button>
             <button class="ctl-btn ctl-opt" id="ctl-dm" title="弹幕开关">弹</button>
+            <button class="ctl-btn ctl-opt" id="ctl-dm-set" title="弹幕设置">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 4.4v1.7M12 17.9v1.7M4.4 12h1.7M17.9 12h1.7M6.6 6.6l1.2 1.2M16.2 16.2l1.2 1.2M6.6 17.4l1.2-1.2M16.2 7.8l1.2-1.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+            </button>
             <button class="ctl-btn ctl-opt" id="ctl-cc" title="字幕" hidden>CC</button>
             <button class="ctl-btn ctl-opt" id="ctl-pip" title="画中画">
               <svg viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.7"/><rect x="12" y="12" width="6.5" height="4.6" rx="1.2" fill="currentColor"/></svg>
@@ -1697,6 +1716,45 @@ async function renderVideo(bvid) {
           </div>
         </div>
       </div>
+      <div class="dm-panel" id="dm-panel" hidden>
+        <div class="dmp-head">弹幕设置</div>
+        <div class="dmp-title">按类型过滤</div>
+        <div class="dmp-types">
+          <button class="dmp-type on" data-k="scroll" title="滚动弹幕">
+            <svg viewBox="0 0 24 24"><path d="M3.5 9h11M3.5 15h17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <span>滚动</span>
+          </button>
+          <button class="dmp-type on" data-k="fixed" title="固定弹幕（顶部/底部）">
+            <svg viewBox="0 0 24 24"><rect x="4" y="6.5" width="16" height="3.4" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.7"/><rect x="4" y="14" width="16" height="3.4" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
+            <span>固定</span>
+          </button>
+          <button class="dmp-type on" data-k="color" title="彩色弹幕">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.4" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="9.2" cy="9.6" r="1.15" fill="currentColor"/><circle cx="14.8" cy="9.6" r="1.15" fill="currentColor"/><circle cx="12" cy="14.6" r="1.15" fill="currentColor"/></svg>
+            <span>彩色</span>
+          </button>
+        </div>
+        <label class="dmp-check"><input type="checkbox" id="dmp-scale" /> 弹幕随屏幕缩放</label>
+        <label class="dmp-check"><input type="checkbox" id="dmp-safe" /> 防挡字幕</label>
+        <label class="dmp-check"><input type="checkbox" id="dmp-smart" /> 智能防挡弹幕</label>
+        <div class="dmp-row">
+          <button class="dmp-btn" id="dmp-words">弹幕屏蔽词</button>
+          <button class="dmp-btn" id="dmp-sync">同步屏蔽列表</button>
+        </div>
+        <div class="dmp-slider"><span>显示区域</span><input type="range" id="dmp-area" min="25" max="90" step="5" /><em id="dmp-area-v">50%</em></div>
+        <div class="dmp-slider"><span>不透明度</span><input type="range" id="dmp-opacity" min="20" max="100" step="5" /><em id="dmp-opacity-v">100%</em></div>
+        <div class="dmp-slider"><span>弹幕字号</span><input type="range" id="dmp-size" min="14" max="34" step="1" /><em id="dmp-size-v">20px</em></div>
+        <div class="dmp-slider"><span>弹幕速度</span><input type="range" id="dmp-speed" min="6" max="20" step="1" /><em id="dmp-speed-v">1.0×</em></div>
+        <div class="dmp-sep"></div>
+        <button class="dmp-adv" id="dmp-adv"><span>高级设置</span><span class="dmp-arrow">›</span></button>
+        <div class="dmp-adv-body" id="dmp-adv-body" hidden>
+          <textarea id="dmp-words-input" class="dmp-textarea" placeholder="每行一个屏蔽词，或用逗号分隔&#10;例如：剧透, 打卡" spellcheck="false"></textarea>
+          <div class="dmp-row">
+            <button class="dmp-btn" id="dmp-words-save">保存屏蔽词</button>
+            <button class="dmp-btn" id="dmp-words-clear">清空</button>
+          </div>
+        </div>
+      </div>
+
       <div class="watch-scroll" id="watch-scroll">
         <div id="watch-body">${skeletons(3)}</div>
       </div>
@@ -1978,6 +2036,143 @@ function bindControls() {
       toast('正在切换画质…');
     });
   }
+
+  /* --- 弹幕设置面板（视频页） --- */
+  const dmPanel = $('dm-panel');
+  const dmSetBtn = $('ctl-dm-set');
+  if (dmPanel && dmSetBtn) {
+    const dmCfg = () => {
+      const st = state.settings || {};
+      return {
+        opacity: Number(st.danmakuOpacity ?? 1),
+        size: Number(st.danmakuSize ?? 20),
+        speed: Number(st.danmakuSpeed ?? 1),
+        area: Number(st.danmakuArea ?? 0.5),
+        scroll: st.dmScroll !== false,
+        fixed: st.dmFixed !== false,
+        color: st.dmColor !== false,
+        scale: st.dmScale !== false,
+        safe: st.dmSafe !== false,
+        smart: !!st.dmSmart,
+        words: String(st.dmWords || ''),
+      };
+    };
+    const pushDm = () => { try { bridge.playerDmStyle(dmCfg()); } catch {} };
+    const saveDm = (patch) => {
+      Object.assign(state.settings, patch);
+      bridge.setSettings(patch).catch(() => {});
+      pushDm();
+    };
+    const paintRange = (el) => {
+      if (!el) return;
+      const min = Number(el.min) || 0;
+      const max = Number(el.max) || 100;
+      const v = Number(el.value) || 0;
+      const pct = max > min ? ((v - min) / (max - min)) * 100 : 0;
+      el.style.setProperty('--p', `${pct.toFixed(1)}%`);
+    };
+
+    const paintDmPanel = () => {
+      const st = state.settings || {};
+      const on = (k) => st[k] !== false;
+      dmPanel.querySelectorAll('.dmp-type').forEach((b) => {
+        const k = b.dataset.k;
+        const v = k === 'scroll' ? on('dmScroll') : k === 'fixed' ? on('dmFixed') : on('dmColor');
+        b.classList.toggle('on', v);
+      });
+      const setChk = (id, v) => { const el = $(id); if (el) el.checked = !!v; };
+      setChk('dmp-scale', on('dmScale'));
+      setChk('dmp-safe', on('dmSafe'));
+      setChk('dmp-smart', !!st.dmSmart);
+      const setRange = (id, val, label, fmt) => {
+        const el = $(id); const em = $(label);
+        if (el) { el.value = String(val); paintRange(el); }
+        if (em) em.textContent = fmt;
+      };
+      setRange('dmp-area', Math.round((st.danmakuArea ?? 0.5) * 100), 'dmp-area-v', `${Math.round((st.danmakuArea ?? 0.5) * 100)}%`);
+      setRange('dmp-opacity', Math.round((st.danmakuOpacity ?? 1) * 100), 'dmp-opacity-v', `${Math.round((st.danmakuOpacity ?? 1) * 100)}%`);
+      setRange('dmp-size', Number(st.danmakuSize ?? 20), 'dmp-size-v', `${Number(st.danmakuSize ?? 20)}px`);
+      setRange('dmp-speed', Math.round((st.danmakuSpeed ?? 1) * 10), 'dmp-speed-v', `${(st.danmakuSpeed ?? 1).toFixed(1)}×`);
+      const ta = $('dmp-words-input');
+      if (ta) ta.value = String(st.dmWords || '');
+    };
+
+    dmSetBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dmPanel.hidden = !dmPanel.hidden;
+      if (!dmPanel.hidden) { paintDmPanel(); pushDm(); }
+    });
+    document.addEventListener('click', (e) => {
+      if (dmPanel.hidden) return;
+      if (e.target.closest('#dm-panel, #ctl-dm-set')) return;
+      dmPanel.hidden = true;
+    });
+
+    dmPanel.querySelectorAll('.dmp-type').forEach((b) => {
+      b.addEventListener('click', () => {
+        const k = b.dataset.k;
+        const key = k === 'scroll' ? 'dmScroll' : k === 'fixed' ? 'dmFixed' : 'dmColor';
+        saveDm({ [key]: !(state.settings[key] !== false) });
+        paintDmPanel();
+      });
+    });
+    [['dmp-scale', 'dmScale'], ['dmp-safe', 'dmSafe'], ['dmp-smart', 'dmSmart']].forEach(([id, key]) => {
+      $(id)?.addEventListener('change', (e) => saveDm({ [key]: e.target.checked }));
+    });
+    const slider = (id, key, labelId, toVal, fmt) => {
+      const el = $(id);
+      if (!el) return;
+      el.addEventListener('input', () => {
+        const v = toVal(Number(el.value));
+        state.settings[key] = v;
+        $(labelId).textContent = fmt(v);
+        paintRange(el);
+        pushDm();
+      });
+      el.addEventListener('change', () => saveDm({ [key]: toVal(Number(el.value)) }));
+    };
+    slider('dmp-area', 'danmakuArea', 'dmp-area-v', (v) => v / 100, (v) => `${Math.round(v * 100)}%`);
+    slider('dmp-opacity', 'danmakuOpacity', 'dmp-opacity-v', (v) => v / 100, (v) => `${Math.round(v * 100)}%`);
+    slider('dmp-size', 'danmakuSize', 'dmp-size-v', (v) => v, (v) => `${v}px`);
+    slider('dmp-speed', 'danmakuSpeed', 'dmp-speed-v', (v) => v / 10, (v) => `${v.toFixed(1)}×`);
+
+    $('dmp-adv')?.addEventListener('click', () => {
+      const body = $('dmp-adv-body');
+      if (!body) return;
+      body.hidden = !body.hidden;
+      dmPanel.classList.toggle('adv-open', !body.hidden);
+    });
+    $('dmp-words')?.addEventListener('click', () => {
+      const body = $('dmp-adv-body');
+      if (body) body.hidden = false;
+      dmPanel.classList.add('adv-open');
+      const ta = $('dmp-words-input');
+      if (ta) { ta.value = String((state.settings || {}).dmWords || ''); ta.focus(); }
+    });
+    $('dmp-words-save')?.addEventListener('click', () => {
+      const ta = $('dmp-words-input');
+      const raw = String(ta ? ta.value : '').replace(/[，、;；]/g, ',');
+      saveDm({ dmWords: raw });
+      toast('屏蔽词已保存');
+    });
+    $('dmp-words-clear')?.addEventListener('click', () => {
+      const ta = $('dmp-words-input');
+      if (ta) ta.value = '';
+      saveDm({ dmWords: '' });
+      toast('已清空屏蔽词');
+    });
+    $('dmp-sync')?.addEventListener('click', () => {
+      const live = store.get('liveFilter', {}) || {};
+      const words = Array.isArray(live.words) ? live.words : [];
+      if (!words.length) return toast('直播页还没有屏蔽词');
+      const ta = $('dmp-words-input');
+      if (ta) ta.value = words.join(', ');
+      saveDm({ dmWords: words.join(', ') });
+      toast(`已同步 ${words.length} 个直播屏蔽词`);
+    });
+
+    paintDmPanel();
+  }
   const savedRate = Number(store.get('rate', 1)) || 1;
   speedIdx = Math.max(0, SPEEDS.indexOf(savedRate));
   speed.textContent = SPEEDS[speedIdx].toFixed(2).replace(/0$/, '') + 'x';
@@ -1989,10 +2184,11 @@ function bindControls() {
     bridge.playerCmd({ cmd: 'speed', value: rate });
   });
 
-  const savedVol = store.get('volume', null);
-  if (savedVol != null) {
-    vol.value = String(Math.round(Number(savedVol) * 100));
-    bridge.playerCmd({ cmd: 'volume', value: Number(savedVol) });
+  const savedVol = Number(state.settings && state.settings.volume);
+  if (Number.isFinite(savedVol)) {
+    const v0 = Math.max(0, Math.min(1, savedVol));
+    vol.value = String(Math.round(v0 * 100));
+    bridge.playerCmd({ cmd: 'volume', value: v0 });
   }
 
   seek.addEventListener('pointerdown', () => { seeking = true; });
@@ -2012,8 +2208,11 @@ function bindControls() {
 
   vol.addEventListener('input', () => {
     const v = Number(vol.value) / 100;
-    store.set('volume', v);
+    state.settings.volume = v;
     bridge.playerCmd({ cmd: 'volume', value: v });
+  });
+  vol.addEventListener('change', () => {
+    bridge.setSettings({ volume: Number(vol.value) / 100 }).catch(() => {});
   });
 }
 
@@ -2246,6 +2445,7 @@ function showPlayerWhenReady(bvid, page = 1, opts = {}) {
       cid,
       episodeId: opts.episodeId,
       startAt,
+      qn: Number(state.settings && state.settings.defaultQuality) || 0,
       rect: { x: r.left, y: r.top, width: r.width, height: r.height },
     });
   };
@@ -5769,7 +5969,13 @@ function bindEvents() {
     state.settings.updateFeed = v;
     bridge.setSettings({ updateFeed: v }).catch(() => {});
     if (v) runUpdateCheck(true);
-    else setUpdateStatus('已清空更新地址，不再检查更新');
+    else {
+      const fallback = DEFAULT_UPDATE_REPO;
+      e.target.value = fallback;
+      state.settings.updateFeed = fallback;
+      bridge.setSettings({ updateFeed: fallback }).catch(() => {});
+      setUpdateStatus('已恢复默认更新源（本项目 GitHub 仓库）');
+    }
   });
   $('up-auto')?.addEventListener('change', (e) => {
     state.settings.updateAutoCheck = e.target.checked;
@@ -5866,6 +6072,14 @@ function bindEvents() {
       bridge.setSettings({ [key]: value }).catch(() => {});
     });
   };
+  $('set-quality')?.addEventListener('change', (e) => {
+    const v = Number(e.target.value) || 0;
+    state.settings.defaultQuality = v;
+    bridge.setSettings({ defaultQuality: v }).catch(() => {});
+    const label = e.target.selectedOptions[0]?.textContent || '自动';
+    toast(`默认画质：${label}`);
+  });
+
   dmBind('set-dm-size', 'dmsize-val', (v) => `${v}px`, 'danmakuSize');
   dmBind('set-dm-opacity', 'dmop-val', (v) => `${Math.round(v * 100)}%`, 'danmakuOpacity', (v) => v / 100);
   dmBind('set-dm-speed', 'dmsp-val', (v) => `${v.toFixed(1)}×`, 'danmakuSpeed', (v) => v / 10);

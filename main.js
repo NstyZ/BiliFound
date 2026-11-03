@@ -91,7 +91,19 @@ let settings = {
   danmakuSize: 20,
   danmakuSpeed: 1,
   danmakuArea: 0.5,
+  // 默认画质（qn，0 = 自动/最高；视频不支持时用它能提供的最高画质）
+  defaultQuality: 0,
+  // 弹幕外观与过滤
+  dmScroll: true,
+  dmFixed: true,
+  dmColor: true,
+  dmScale: true,
+  dmSafe: true,
+  dmSmart: false,
+  dmWords: '',
   autoplay: true,
+  // 音量跟软件走，不跟视频走（0~1）
+  volume: 1,
   danmaku: true,
   downloadDir: '',
   // 应用内更新：清单地址（静态 JSON），留空则不检查
@@ -635,7 +647,8 @@ function normalizePlayInfo(d, want) {
 }
 
 async function resolvePlayUrl({ bvid, cid, epId, qn }) {
-  const want = Number(qn) || 80;
+  // 优先用调用方给的 qn；没给就用设置里的默认画质；都没有才回落到 1080P
+  const want = Number(qn) || Number(settings.defaultQuality) || 80;
   try {
     if (epId) {
       const r = await apiFetch(
@@ -1925,6 +1938,7 @@ ipcMain.on('player:show', async (event, payload) => {
   view.webContents.setAudioMuted(false);
 
   const dmParams =
+    `&vol=${Math.max(0, Math.min(1, Number(settings.volume ?? 1)))}` +
     `&dmOpacity=${Number(settings.danmakuOpacity ?? 1)}` +
     `&dmSize=${Number(settings.danmakuSize ?? 20)}` +
     `&dmSpeed=${Number(settings.danmakuSpeed ?? 1)}` +
@@ -2130,6 +2144,7 @@ ipcMain.on('player:quality', async (event, { qn, startAt }) => {
     `&start=${Math.floor(startAt || 0)}` +
     `&cid=${meta.cid || ''}` +
     `&ep=${meta.epId || ''}` +
+    `&vol=${Math.max(0, Math.min(1, Number(settings.volume ?? 1)))}` +
     `&dmOpacity=${Number(settings.danmakuOpacity ?? 1)}` +
     `&dmSize=${Number(settings.danmakuSize ?? 20)}` +
     `&dmSpeed=${Number(settings.danmakuSpeed ?? 1)}` +
@@ -2145,6 +2160,25 @@ ipcMain.on('player:quality', async (event, { qn, startAt }) => {
       ).catch(() => {});
     }).catch(() => {});
   }
+});
+
+ipcMain.on('player:volume', (event, value) => {
+  const v = Math.max(0, Math.min(1, Number(value)));
+  if (!Number.isFinite(v)) return;
+  if (Math.abs(v - Number(settings.volume ?? 1)) < 0.001) return; // 回声，忽略
+  settings.volume = v;
+  saveSettings();
+  const entry = entryFor(event);
+  if (entry && entry.win) sendToWin(entry.win, 'player-volume', v);
+});
+
+ipcMain.on('player:dm-style', (event, cfg) => {
+  const entry = entryFor(event);
+  if (!entry || !entry.player || entry.player.webContents.isDestroyed()) return;
+  const payload = JSON.stringify(cfg || {});
+  entry.player.webContents
+    .executeJavaScript(`window.__setDmStyle && window.__setDmStyle(${payload})`)
+    .catch(() => {});
 });
 
 ipcMain.handle('player:danmaku', (event, on) => {
@@ -2326,7 +2360,10 @@ function pickUpdateAsset(data) {
 }
 
 async function checkUpdate({ force = false } = {}) {
-  const feed = String(settings.updateFeed || '').trim() || DEFAULT_UPDATE_FEED;
+  let feed = String(settings.updateFeed || '').trim() || DEFAULT_UPDATE_FEED;
+  // 允许直接填仓库主页（https://github.com/owner/repo），自动换成 Releases API
+  const repoMatch = feed.match(/^https?:\/\/github\.com\/([^/?#]+)\/([^/?#]+)\/?$/i);
+  if (repoMatch) feed = `https://api.github.com/repos/${repoMatch[1]}/${repoMatch[2]}/releases/latest`;
   if (!feed) return { ok: false, code: 'no-feed', message: '还没有配置更新地址（设置 → 更新，或填写仓库地址）' };
   if (!/^https?:/i.test(feed)) return { ok: false, code: 'bad-feed', message: '更新地址必须是 http(s) 链接' };
   try {

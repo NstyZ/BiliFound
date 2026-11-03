@@ -1,7 +1,7 @@
 'use strict';
 const { contextBridge, ipcRenderer } = require('electron');
 
-const allowEvents = ['shortcut', 'theme-changed', 'settings-changed', 'download-toast', 'login-changed', 'player-ready', 'player-error', 'live-danmaku', 'live-fullscreen', 'video-fullscreen', 'window-state', 'update-progress', 'update-available', 'update-open'];
+const allowEvents = ['shortcut', 'theme-changed', 'settings-changed', 'download-toast', 'login-changed', 'player-ready', 'player-error', 'live-danmaku', 'live-fullscreen', 'video-fullscreen', 'window-state', 'update-progress', 'update-available', 'update-open', 'player-volume'];
 
 contextBridge.exposeInMainWorld('bg', {
   platform: process.platform,
@@ -29,6 +29,7 @@ contextBridge.exposeInMainWorld('bg', {
   popupMenu: (payload) => ipcRenderer.invoke('menu:popup', payload),
   playerQuality: (payload) => ipcRenderer.send('player:quality', payload),
   playerDanmaku: (on) => ipcRenderer.invoke('player:danmaku', on),
+  playerDmStyle: (cfg) => ipcRenderer.send('player:dm-style', cfg),
   playerCmd: (payload) => ipcRenderer.send('player:cmd', payload),
   liveInfo: (payload) => ipcRenderer.invoke('live:info', payload),
   liveDanmakuStart: (payload) => ipcRenderer.invoke('live:danmaku:start', payload),

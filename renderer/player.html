@@ -98,14 +98,38 @@
       const start = Number(params.get('start') || 0);
       const a = document.getElementById('a');
 
-      // 弹幕外观参数（来自设置）
-      const dmOpacity = Math.max(0.2, Math.min(1, Number(params.get('dmOpacity') || 1)));
-      const dmSize = Math.max(12, Math.min(34, Number(params.get('dmSize') || 20)));
-      const dmSpeed = Math.max(0.5, Math.min(2.4, Number(params.get('dmSpeed') || 1)));
-      const dmArea = Math.max(0.25, Math.min(0.9, Number(params.get('dmArea') || 0.5)));
-      const LANES = Math.max(2, Math.round(dmArea * 8));
-      layer.style.opacity = String(dmOpacity);
-      layer.style.setProperty('--dm-size', dmSize + 'px');
+      // 弹幕外观参数（来自设置；播放中可被 __setDmStyle 实时改写）
+      const splitWords = (v) => String(v || '').split(/[,\uFF0C\u3001;\uFF1B]/).map((w) => w.trim()).filter(Boolean);
+      const style = {
+        opacity: Math.max(0.2, Math.min(1, Number(params.get('dmOpacity') || 1))),
+        size: Math.max(12, Math.min(34, Number(params.get('dmSize') || 20))),
+        speed: Math.max(0.5, Math.min(2.4, Number(params.get('dmSpeed') || 1))),
+        area: Math.max(0.25, Math.min(0.9, Number(params.get('dmArea') || 0.5))),
+        scroll: params.get('dmScroll') !== '0',
+        fixed: params.get('dmFixed') !== '0',
+        color: params.get('dmColor') !== '0',
+        scale: params.get('dmScale') !== '0',
+        safe: params.get('dmSafe') !== '0',
+        smart: params.get('dmSmart') === '1',
+        words: splitWords(params.get('dmWords')),
+      };
+      // 视觉字号：随屏幕缩放时按画布宽度换算，否则用固定像素
+      const visualSize = () => {
+        if (!style.scale) return style.size;
+        const w = layer.clientWidth || 960;
+        return Math.max(12, Math.min(40, style.size * Math.max(0.75, Math.min(1.5, w / 960))));
+      };
+      const laneCount = () => {
+        let n = Math.max(2, Math.round(style.area * 8));
+        if (style.safe) n -= 1;   // 给字幕留出一条
+        if (style.smart) n -= 1;  // 进取一点：少占画面底部
+        return Math.max(2, n);
+      };
+      const paintStyle = () => {
+        layer.style.opacity = String(style.opacity);
+        layer.style.setProperty('--dm-size', visualSize() + 'px');
+      };
+      paintStyle();
 
       const subEl = document.getElementById('sub');
       let subtitleCues = [];
@@ -136,12 +160,34 @@
       layer.classList.toggle('off', !window.__dmOn);
       let danmaku = [];
       let spawned = new Set();
-      let laneNext = new Array(LANES).fill(0);
+      let laneNext = [];
+      const resetLanes = () => { laneNext = new Array(laneCount()).fill(0); };
+      resetLanes();
+
+      // 设置面板实时改弹幕：opacity / size / speed / area / 过滤 / 缩放 / 防挡 / 屏蔽词
+      window.__setDmStyle = (cfg) => {
+        if (!cfg) return;
+        if (cfg.opacity != null) style.opacity = Math.max(0.2, Math.min(1, Number(cfg.opacity) || 0.2));
+        if (cfg.size != null) style.size = Math.max(12, Math.min(34, Number(cfg.size) || 20));
+        if (cfg.speed != null) style.speed = Math.max(0.5, Math.min(2.4, Number(cfg.speed) || 1));
+        if (cfg.area != null) style.area = Math.max(0.25, Math.min(0.9, Number(cfg.area) || 0.5));
+        if (cfg.scroll != null) style.scroll = !!cfg.scroll;
+        if (cfg.fixed != null) style.fixed = !!cfg.fixed;
+        if (cfg.color != null) style.color = !!cfg.color;
+        if (cfg.scale != null) style.scale = !!cfg.scale;
+        if (cfg.safe != null) style.safe = !!cfg.safe;
+        if (cfg.smart != null) style.smart = !!cfg.smart;
+        if (cfg.words != null) style.words = splitWords(cfg.words);
+        paintStyle();
+        resetLanes();
+        layer.innerHTML = '';
+        return true;
+      };
 
       window.__setDanmaku = (list) => {
         danmaku = (list || []).slice().sort((a, b) => a.time - b.time);
         spawned = new Set();
-        laneNext = new Array(LANES).fill(0);
+        resetLanes();
       };
       window.__setDanmakuOn = (on) => {
         window.__dmOn = !!on;
@@ -158,6 +204,10 @@
 
       if (!src) { fail('缺少视频地址'); return; }
       v.src = src;
+
+      // 初始音量：跟软件走（来自设置），不是每个视频都满音量
+      const initVol = Math.max(0, Math.min(1, Number(params.get('vol') ?? 1)));
+      v.volume = initVol;
 
       // DASH：视频流与音频流分离，用 audio 元素承载声音并保持同步
       const hasAudio = !!asrc;
@@ -186,6 +236,7 @@
             a.currentTime = v.currentTime;
           }
         }, 2000);
+        a.volume = initVol;
         a.addEventListener('error', () => { a.style.display = 'none'; });
       }
 
@@ -196,6 +247,15 @@
       });
       v.addEventListener('canplay', () => loading.classList.add('hide'));
       v.addEventListener('error', () => fail('视频加载失败（可能是会员内容或地址过期）'));
+
+      // 用户改音量（含全屏滑块 / 键盘）→ 回报给外壳，写进设置，下个视频沿用
+      let volTimer = null;
+      v.addEventListener('volumechange', () => {
+        clearTimeout(volTimer);
+        volTimer = setTimeout(() => {
+          if (window.playerBridge && window.playerBridge.volume) window.playerBridge.volume(v.volume);
+        }, 400);
+      });
 
       // 点击播放/暂停；双击全屏（Windows 走窗口原生全屏，而不是视图内 DOM 全屏）
       v.addEventListener('click', () => {
@@ -229,21 +289,45 @@
           spawn(d);
         }
       }
+      // 屏蔽词 / 类型过滤：在入队前就挡掉
+      const blockedByWord = (text) => {
+        if (!style.words.length) return false;
+        const t = String(text || '');
+        return style.words.some((w) => t.includes(w));
+      };
+      const isFixedMode = (d) => Number(d.mode) === 4 || Number(d.mode) === 5;
       function spawn(d) {
+        if (!style.scroll && !isFixedMode(d)) return;
+        if (!style.fixed && isFixedMode(d)) return;
+        if (!style.color && Number(d.color || 16777215) !== 16777215) return;
+        if (blockedByWord(d.text)) return;
+
+        const size = visualSize();
+        const el = document.createElement('div');
+        el.className = 'dm';
+        el.textContent = d.text;
+        el.style.fontSize = size + 'px';
+        el.style.color = '#' + Number(d.color || 16777215).toString(16).padStart(6, '0');
+
+        if (isFixedMode(d)) {
+          // 固定弹幕：顶部(5) / 底部(4) 停留 3 秒，不滚动
+          el.classList.add('dm-fixed');
+          el.style.top = Number(d.mode) === 5 ? '8px' : `${Math.max(8, layer.clientHeight - size * 2.2)}px`;
+          layer.appendChild(el);
+          setTimeout(() => el.remove(), 3000);
+          return;
+        }
+
         const now = performance.now();
+        if (!laneNext.length) resetLanes();
         let lane = -1;
         for (let i = 0; i < laneNext.length; i += 1) {
           if (laneNext[i] < now) { lane = i; break; }
         }
         if (lane < 0) return;
         laneNext[lane] = now + 1400;
-        const el = document.createElement('div');
-        el.className = 'dm';
-        el.textContent = d.text;
-        el.style.top = (8 + lane * (dmSize * 1.5)) + 'px';
-        el.style.fontSize = dmSize + 'px';
-        el.style.color = '#' + Number(d.color || 16777215).toString(16).padStart(6, '0');
-        const dur = Math.max(4, Math.min(14, (4 + String(d.text).length * 0.12) / dmSpeed));
+        el.style.top = (8 + lane * (size * 1.5)) + 'px';
+        const dur = Math.max(4, Math.min(14, (4 + String(d.text).length * 0.12) / style.speed));
         el.style.animationDuration = dur + 's';
         layer.appendChild(el);
         setTimeout(() => el.remove(), dur * 1000 + 200);
