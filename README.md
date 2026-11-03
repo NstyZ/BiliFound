@@ -76,6 +76,17 @@
 > 未签名、未公证，首次打开请**右键 →「打开」**；若仍被拦下，在终端执行：
 > `xattr -dr com.apple.quarantine /Applications/BiliFound.app`
 
+macOS 版补充说明：
+
+| 项目 | 说明 |
+| --- | --- |
+| 系统要求 | macOS 13 Ventura 及以上 |
+| 应用标识 | `com.styzn.bilifound` |
+| 数据目录 | `~/Library/Application Support/BiliFound`（设置、背景、登录态） |
+| 登录 | 侧边栏底部「登录」，应用内弹出 B 站官方登录页 |
+| 窗口全屏 | `⌃⌘F` 或工具栏全屏按钮（与播放器内的「视频全屏」是两个入口） |
+| 退出全屏 | `Esc`（直播全屏另有画面右上角「退出全屏」按钮） |
+
 > Windows 安装包同样未做代码签名，首次运行如提示「Windows 已保护你的电脑」→
 > 点「更多信息 → 仍要运行」。各产物的 SHA256 见
 > [SHA256SUMS.txt](SHA256SUMS.txt) 与 [WINDOWS版说明.md](WINDOWS版说明.md)。
@@ -87,17 +98,19 @@
 
 ```bash
 git clone https://github.com/NstyZ/BiliFound.git
-cd BiliFound-Windows
+cd BiliFound
 npm install
 npm start          # = electron .
-npm run probe      # 冒烟测试：12 项检查，结果写在 build/probe/report.json
+npm run probe      # 冒烟测试：结果写在 build/probe/report.json
 ```
 
 > Windows 上如果 Electron 把主进程当成 Node 跑（报 `require is not defined`），
 > 先清掉环境变量：`$env:ELECTRON_RUN_AS_NODE = $null`。
 >
-> macOS 上打包产物为 `.dmg` / `.zip`（arm64）；Windows 侧的 `tools/build-win.js` 与
-> `electron-builder.yml` 只负责 Windows 产物，两端互不影响。
+> macOS 上如果继承了 `ELECTRON_RUN_AS_NODE`，用 `env -u ELECTRON_RUN_AS_NODE npm start` 启动。
+>
+> `npm run probe` 运行的是 `tools/probe-main.js`，其中「窗口按钮」「platform-win 类名」等
+> 3 项是 Windows 专用断言，在 macOS 上按设计不通过，其余检查应全绿。
 
 ## 打包
 
@@ -114,27 +127,61 @@ npm run release   # 上面两样一起做
 
 ### macOS（arm64）
 
-macOS 产物由 electron-builder 的 mac 目标产出（`electron-builder --mac --arm64`，输出 `.dmg` / `.zip`），
-签名与公证配置在 macOS 侧的构建流程里。本仓库的 `tools/build-win.js` 与 `electron-builder.yml`
-只负责 Windows，两端打包互不影响。
+macOS 侧**不使用 electron-builder**（仓库里的 `electron-builder.yml` 与 `tools/build-win.js` 只负责 Windows）。
+macOS 用 `electron-packager` 直接产出 `.app`，再压缩成 zip：
+
+```bash
+# 1) 生成 .icns（仓库只带 1024 PNG；需要 macOS 自带的 sips / iconutil）
+bash tools/make-icns.sh build/icon-1024.png
+
+# 2) 打包 .app
+npx electron-packager . BiliFound \
+  --platform=darwin --arch=arm64 \
+  --icon=build/icon.icns \
+  --app-bundle-id=com.styzn.bilifound \
+  --app-version=1.0.0 \
+  --overwrite \
+  --ignore="^/build" --ignore="^/tools" \
+  --ignore="/node_modules/electron/dist"
+
+# 3) 压缩为发布资产
+ditto -c -k --sequesterRsrc --keepParent \
+  BiliFound-darwin-arm64/BiliFound.app \
+  BiliFound-1.0.0-arm64.zip
+```
+
+> macOS 产物不做代码签名与公证；分发给他人时对方需右键打开或放行 Gatekeeper。
+> 发布资产命名建议保持 `BiliFound-<版本>-arm64.zip`，应用内更新按 `arm64`/`mac` 关键字挑选。
 
 ## 目录结构
 
-> 以 Windows 侧为例；macOS 侧共用 `renderer/` 与业务层，平台差异集中在窗口、菜单与打包脚本。
+> 仓库同时包含 Windows 与 macOS 两个版本：`renderer/`、`main.js` 与业务层两端共用，
+> 平台差异集中在 `main.js` 的 `isMac / isWin` 分支、窗口菜单与打包脚本。
 
 ```
-renderer/            自绘界面（原生 DOM，无网页）
+renderer/            自绘界面（原生 DOM，无网页）—— 两端共用
 ├── index.html       侧边栏 + 工具栏 + 内容视图 + 设置浮层
 ├── style.css        液态玻璃主题（含 5 套设计风格预设）
 ├── app.js           路由、接口调用、首页/搜索/视频/直播/番剧等全部渲染逻辑
 ├── player.html      自建播放器：DASH 双流、弹幕层、字幕、全屏控制
 └── live.html        直播页：hls.js + 画面弹幕层
-main.js              窗口、接口代理（带 Cookie 的 session.fetch）、WebContentsView、登录窗、更新
+main.js              窗口、接口代理、WebContentsView、登录窗、更新（含平台分支）
 preload.js           contextBridge 暴露 api / player / settings / 窗口状态等能力
 player-preload.js    播放器与外壳的消息通道（含滚轮转发）
+live-preload.js      直播视图桥（退出全屏）
 tools/               图标生成、打包、冒烟测试、截屏（不打包）
 docs/                技术文档、移植报告、同步清单、截图
-assets/              随包分发的图标
+assets/              随包分发的图标（Windows）
+
+# Windows 专用
+electron-builder.yml 安装版 / 便携版打包配置
+tools/build-win.js   绿色包与 zip 构建脚本
+inject/              Windows 侧使用的注入资源
+WINDOWS版说明.md     Windows 版使用说明
+
+# macOS 专用
+build/icon-1024.png  1024 图标源文件（用 tools/make-icns.sh 生成 .icns）
+tools/make-icns.sh   sips + iconutil 生成 .icns
 ```
 
 ## 技术要点
@@ -149,30 +196,32 @@ assets/              随包分发的图标
 
 ## 快捷键
 
-| 快捷键 | 功能 |
-| --- | --- |
-| `Ctrl+K` | 命令面板 |
-| `Ctrl+F` | 聚焦搜索 |
-| `Ctrl+Shift+H` | 回首页 |
-| `Alt+←` / `Alt+→`（或 `Ctrl+[` / `Ctrl+]`） | 后退 / 前进 |
-| `F5` / `Ctrl+R` | 刷新当前页面 |
-| `Ctrl+\` | 折叠 / 展开侧边栏 |
-| `Ctrl+Shift+D` | 切换深浅色 |
-| `Ctrl+Shift+I` | 沉浸模式 |
-| `Ctrl+,` | 偏好设置 |
-| `Ctrl+/` | 快捷键帮助 |
-| `F11` / `Ctrl+Shift+F` | 窗口全屏 |
-| `空格` / `J` / `K` / `L` | 播放暂停 / 后退 5 秒 / 播放暂停 / 前进 5 秒 |
-| `Ctrl+W` | 关闭窗口 |
+| 功能 | Windows | macOS |
+| --- | --- | --- |
+| 命令面板 | `Ctrl+K` | `⌘K` |
+| 聚焦搜索 | `Ctrl+F` | `⌘F` |
+| 回首页 | `Ctrl+Shift+H` | `⌘⇧H` |
+| 后退 / 前进 | `Alt+←` / `Alt+→` 或 `Ctrl+[` / `Ctrl+]` | `⌘[` / `⌘]` |
+| 刷新当前页面 | `F5` / `Ctrl+R` | `⌘R` |
+| 折叠 / 展开侧边栏 | `Ctrl+\` | `⌘\` |
+| 切换深浅色 | `Ctrl+Shift+D` | `⌘⇧D` |
+| 沉浸模式 | `Ctrl+Shift+I` | `⌘⇧I` |
+| 偏好设置 | `Ctrl+,` | `⌘,` |
+| 快捷键帮助 | `Ctrl+/` | `⌘/` |
+| 窗口全屏 | `F11` / `Ctrl+Shift+F` | `⌃⌘F` |
+| 播放 / 暂停 / 快退 / 快进 | `空格` / `K` / `J` / `L` | 同左 |
+| 关闭窗口 | `Ctrl+W` | `⌘W` |
 
 ## 已知限制
 
 - 4K / 杜比视界需要大会员，取决于账号权益与片源；DASH-only 片源无法下载（会明确提示）
 - 私信不支持撤回与语音消息
 - 直播「点赞」是本地计数与动效，不上报到 B 站
-- 应用内更新需要自备一个静态 `latest.json` 清单（见 [docs/TECHNICAL.md](docs/TECHNICAL.md) 的「应用内更新」）
+- 应用内更新：macOS 版默认从本仓库 GitHub Releases 检查，也可填自定义 `latest.json`；
+  Windows 版使用 `latest.json` 清单（见 [docs/TECHNICAL.md](docs/TECHNICAL.md) 的「应用内更新」）
 - macOS 版只提供 Apple Silicon（arm64）构建，Intel Mac 无法运行
 - 未做代码签名：Windows 首次运行可能触发 SmartScreen，macOS 需要手动放行 Gatekeeper
+- macOS 产物由 `electron-packager` 生成（非 electron-builder），不产出 `.dmg`
 
 ## 文档
 
