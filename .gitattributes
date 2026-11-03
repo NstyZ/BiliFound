@@ -1,0 +1,12 @@
+# 统一换行（仓库内保持原样，不做 CRLF 转换）
+* text=auto
+
+# 二进制，禁止任何换行处理
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.icns binary
+*.zip binary
+*.exe binary
+*.dll binary

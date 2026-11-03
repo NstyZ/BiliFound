@@ -1,0 +1,365 @@
+/* ============================================================
+   BiliGlass 注入样式 —— 让 B 站页面液态玻璃化
+   注意：只做皮肤级修改，避免破坏页面布局
+   ============================================================ */
+
+/* ---------- 顶部导航栏：毛玻璃 ---------- */
+.bili-header,
+.bili-header-bar,
+#biliMainHeader,
+.fixed-header .bili-header-bar,
+.home-channel .channel-entry {
+  background: rgba(255, 255, 255, 0.66) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.55) !important;
+}
+html.bili-dark .bili-header,
+html.bili-dark .bili-header-bar {
+  background: rgba(23, 25, 35, 0.66) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+.bili-header .right-channel .right-channel-item:hover {
+  background: rgba(0, 174, 236, 0.1) !important;
+  border-radius: 10px !important;
+}
+
+/* ---------- 搜索框胶囊化 ---------- */
+.nav-search-box,
+.bili-header .nav-search-box {
+  border-radius: 999px !important;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.7) !important;
+  box-shadow: 0 4px 18px rgba(31, 38, 90, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  transition: box-shadow 0.2s;
+}
+.nav-search-box:focus-within {
+  box-shadow: 0 6px 24px rgba(251, 114, 153, 0.18), 0 0 0 3px rgba(251, 114, 153, 0.15) !important;
+}
+
+/* ---------- 通用卡片：圆角 + 悬浮 ---------- */
+.bili-video-card,
+.feed-card,
+.video-card,
+.history-card,
+.rank-list .rank-item,
+.anime-card,
+.manga-card,
+.live-card,
+.recommended-container_floor-aside .container,
+#i_cecream .feed-card,
+.popular-list .card {
+  border-radius: 16px !important;
+  overflow: hidden;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s !important;
+}
+.bili-video-card:hover,
+.feed-card:hover,
+.video-card:hover,
+.history-card:hover,
+.live-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 14px 36px rgba(31, 38, 90, 0.16), 0 0 0 1px rgba(255, 255, 255, 0.6) inset !important;
+  z-index: 5;
+}
+.bili-video-card .bili-video-card__cover,
+.bili-video-card__cover img,
+.video-card__pic,
+.card-pic {
+  border-radius: 16px !important;
+}
+
+/* 卡片图片圆角过渡顺滑 */
+.bili-video-card__cover,
+.video-card__pic {
+  overflow: hidden;
+}
+
+/* ---------- 视频播放页 ---------- */
+.bpx-player-container {
+  border-radius: 12px;
+  overflow: hidden;
+}
+.right-container .up-panel,
+.right-container .danmaku-wrap,
+.playlist-box,
+.reply-box,
+.comment-container {
+  border-radius: 16px !important;
+}
+.video-info-container {
+  backdrop-filter: blur(6px);
+}
+
+/* ---------- 二级页头部 ---------- */
+#internationalHeader,
+.international-header {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+}
+
+/* ---------- 滚动条 ---------- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(251, 114, 153, 0.45), rgba(0, 174, 236, 0.45));
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(251, 114, 153, 0.7), rgba(0, 174, 236, 0.7));
+  background-clip: padding-box;
+}
+
+/* ---------- 选中文本 ---------- */
+::selection {
+  background: rgba(251, 114, 153, 0.3);
+}
+
+/* ---------- 广告 / 推广卡片隐藏（由设置开关控制） ---------- */
+html.biliGlassHideAds .bili-video-card:has(.bili-video-card__info--ad),
+html.biliGlassHideAds .bili-video-card:has(.bili-video-card__info--cm),
+html.biliGlassHideAds .feed-card:has(.bili-video-card__info--ad),
+html.biliGlassHideAds .feed-card:has(.bili-video-card__info--cm),
+html.biliGlassHideAds .eva-ad,
+html.biliGlassHideAds .adpos,
+html.biliGlassHideAds .video-page-special-card-small,
+html.biliGlassHideAds .slide-ad,
+html.biliGlassHideAds #slide_ad,
+html.biliGlassHideAds .bili-danmaku-x-ad,
+html.biliGlassHideAds .reply-ads {
+  display: none !important;
+}
+
+/* ---------- 首页信息流留白微调 ---------- */
+#i_cecream .feed2 {
+  padding-top: 4px;
+}
+
+/* ---------- 弹出小窗：更沉浸 ---------- */
+html.biliglass-popout body {
+  overflow-x: hidden;
+}
+
+/* ============================================================
+   去网页化（declutter）：隐藏站点头部导航 / 页脚 / 推广 / 浏览器提示
+   由设置项"精简网页界面"控制（html.biliGlassDeclutter）
+   ============================================================ */
+
+/* 头部：隐藏巨型轮播 banner 与频道行，只保留细条 */
+html.biliGlassDeclutter .bili-header__banner,
+html.biliGlassDeclutter .bili-header__channel,
+html.biliGlassDeclutter .bili-header__menu .left-entry,
+html.biliGlassDeclutter .bili-header__menu .center-search-container {
+  display: none !important;
+}
+html.biliGlassDeclutter .bili-header,
+html.biliGlassDeclutter .bili-header--large {
+  /* 保留 52px 高度：内容区按 header 高度留白，置 0 会被头部盖住 */
+  height: 52px !important;
+  min-height: 0 !important;
+}
+html.biliGlassDeclutter .bili-header__bar {
+  height: 52px !important;
+  background: rgba(255, 255, 255, 0.62) !important;
+  backdrop-filter: blur(26px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(180%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 1px 0 rgba(31, 38, 90, 0.04) !important;
+}
+html.biliGlassDeclutter .right-entry {
+  margin-left: auto !important;
+  padding-right: 8px;
+}
+/* 推广类入口 */
+html.biliGlassDeclutter .vip-entry,
+html.biliGlassDeclutter .game-download-notify-entry-wrap,
+html.biliGlassDeclutter .browser-tip,
+html.biliGlassDeclutter .bili-download-guide,
+html.biliGlassDeclutter .download-app-banner,
+html.biliGlassDeclutter .app-download-guide,
+html.biliGlassDeclutter .client-download-entry,
+html.biliGlassDeclutter .bili-fixed-tools,
+html.biliGlassDeclutter .fixed-right {
+  display: none !important;
+}
+/* 页脚 */
+html.biliGlassDeclutter .bili-footer,
+html.biliGlassDeclutter #biliMainFooter,
+html.biliGlassDeclutter .international-footer,
+html.biliGlassDeclutter .footer-wrap,
+html.biliGlassDeclutter .link-footer {
+  display: none !important;
+}
+/* 页面质感：系统字体 + 更轻的底色 */
+html.biliGlassDeclutter body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC",
+    "Segoe UI", "Microsoft YaHei", sans-serif !important;
+  background: #f7f8fb !important;
+}
+html.biliGlassDeclutter #i_cecream,
+html.biliGlassDeclutter .home-container {
+  background: transparent !important;
+}
+html.biliGlassDeclutter .bili-header__banner ~ * {
+  /* banner 隐藏后其占位容器若仍在，强制收缩 */
+  margin-top: 0 !important;
+}
+
+/* ============================================================
+   内容面板化：限宽居中 / 卡片面 / 排版降噪 / 隐藏网页控件
+   （随「精简网页界面」开关生效）
+   ============================================================ */
+
+/* 画布与留白 */
+html.biliGlassDeclutter body {
+  background: #f4f6f9 !important;
+}
+html.biliGlassDeclutter .bili-feed4,
+html.biliGlassDeclutter .bili-feed4-layout,
+html.biliGlassDeclutter .feed2,
+html.biliGlassDeclutter .recommended-container_floor-aside,
+html.biliGlassDeclutter .recommended-container_floor-aside .container,
+html.biliGlassDeclutter .container.is-version8 {
+  background: transparent !important;
+}
+html.biliGlassDeclutter .bili-feed4-layout {
+  max-width: 1160px !important;
+  margin: 0 auto !important;
+  padding: 22px 28px 64px !important;
+}
+
+/* 卡片：独立卡面 + 发丝描边，去掉网页式的块状背景 */
+html.biliGlassDeclutter .bili-video-card,
+html.biliGlassDeclutter .feed-card {
+  background: #ffffff !important;
+  border: 1px solid rgba(16, 20, 32, 0.06) !important;
+  border-radius: 12px !important;
+  padding: 8px !important;
+  overflow: hidden !important;
+  transition: transform 0.18s cubic-bezier(0.32, 0.72, 0, 1),
+    box-shadow 0.18s cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+html.biliGlassDeclutter .bili-video-card:hover,
+html.biliGlassDeclutter .feed-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 26px rgba(16, 20, 32, 0.1) !important;
+}
+html.biliGlassDeclutter .bili-video-card .bili-video-card__wrap,
+html.biliGlassDeclutter .feed-card .bili-video-card__wrap {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+html.biliGlassDeclutter .bili-video-card__image,
+html.biliGlassDeclutter .bili-video-card__cover,
+html.biliGlassDeclutter .bili-video-card__pic {
+  border-radius: 8px !important;
+}
+
+/* 排版：标题两行、元信息更轻 */
+html.biliGlassDeclutter .bili-video-card__info {
+  padding: 8px 2px 2px !important;
+}
+html.biliGlassDeclutter .bili-video-card__info--tit {
+  font-size: 12.5px !important;
+  font-weight: 550 !important;
+  line-height: 1.45 !important;
+  color: #17181c !important;
+  letter-spacing: 0.002em;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+html.biliGlassDeclutter .bili-video-card__info--author,
+html.biliGlassDeclutter .bili-video-card__stats,
+html.biliGlassDeclutter .bili-video-card__stats--item {
+  font-size: 11px !important;
+  color: rgba(23, 24, 28, 0.5) !important;
+}
+html.biliGlassDeclutter .bili-video-card__stats {
+  padding-top: 4px !important;
+}
+
+/* 分区标题：应用式标题 */
+html.biliGlassDeclutter .floor-single-card .floor-title,
+html.biliGlassDeclutter .feed-card .floor-title,
+html.biliGlassDeclutter .bili-feed4 .floor-title {
+  font-size: 15px !important;
+  font-weight: 650 !important;
+  color: #17181c !important;
+  letter-spacing: 0.01em;
+}
+
+/* 隐藏网页控件：换一换 / 回到顶部 / 悬浮挂件 / 下载推广 */
+html.biliGlassDeclutter [class*="feed-roll"],
+html.biliGlassDeclutter [class*="roll-btn"],
+html.biliGlassDeclutter [class*="go-top"],
+html.biliGlassDeclutter [class*="fixed-tool"],
+html.biliGlassDeclutter [class*="back-top"],
+html.biliGlassDeclutter [class*="download-app"],
+html.biliGlassDeclutter [class*="app-download"],
+html.biliGlassDeclutter [class*="open-app"],
+html.biliGlassDeclutter .bili-guide,
+html.biliGlassDeclutter .login-guide {
+  display: none !important;
+}
+
+/* ---------- 视频页 ---------- */
+html.biliGlassDeclutter .bpx-player-container,
+html.biliGlassDeclutter .bpx-player-primary-area {
+  border-radius: 10px !important;
+  overflow: hidden !important;
+}
+html.biliGlassDeclutter .video-info-container {
+  padding: 16px 0 12px !important;
+  background: transparent !important;
+}
+html.biliGlassDeclutter .video-title {
+  font-size: 19px !important;
+  font-weight: 650 !important;
+  line-height: 1.4 !important;
+  letter-spacing: 0.005em;
+  color: #17181c !important;
+}
+html.biliGlassDeclutter .video-desc-container,
+html.biliGlassDeclutter .video-toolbar-left,
+html.biliGlassDeclutter .video-toolbar-right {
+  color: rgba(23, 24, 28, 0.6) !important;
+}
+html.biliGlassDeclutter .right-container .recommend-list-v1,
+html.biliGlassDeclutter .right-container .rec-list,
+html.biliGlassDeclutter .reply-box,
+html.biliGlassDeclutter .danmaku-box {
+  background: #ffffff !important;
+  border: 1px solid rgba(16, 20, 32, 0.06) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+html.biliGlassDeclutter .right-container .video-page-card-small {
+  border-radius: 8px !important;
+}
+
+/* ---------- 搜索页 ---------- */
+html.biliGlassDeclutter .search-page,
+html.biliGlassDeclutter .search-container {
+  max-width: 1120px !important;
+  margin: 0 auto !important;
+}
+
+/* 通用细节：去掉生硬的边框与默认链接样式 */
+html.biliGlassDeclutter a { text-decoration: none; }
+html.biliGlassDeclutter ::-webkit-scrollbar-thumb {
+  background: rgba(23, 24, 28, 0.18) !important;
+  border-radius: 99px;
+}

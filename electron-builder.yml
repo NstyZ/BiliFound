@@ -1,0 +1,66 @@
+appId: com.styzn.bilifound
+productName: BiliFound
+copyright: Copyright © 2026 styzn
+electronVersion: 38.8.6
+
+# 复用 node_modules 里已经下好的 Electron 38.8.6（win32-x64），避免再下载 100MB
+electronDist: node_modules/electron/dist
+
+directories:
+  output: dist-installer
+  buildResources: build
+
+# 保持未打包 asar：与验证过的目录结构一致，出问题也能直接看源码
+asar: false
+
+files:
+  - "**/*"
+  - "!build/probe/**"
+  - "!build/*.png"
+  - "!build/*.log"
+  - "!docs/**"
+  - "!tools/**"
+  - "!dist/**"
+  - "!dist-installer/**"
+  - "!package-lock.json"
+  - "!electron-builder.yml"
+  - "!.eb-cache/**"
+  - "!node_modules/electron/**"
+  - "!node_modules/electron-builder/**"
+  - "!node_modules/.bin/**"
+  - "!**/*.map"
+
+win:
+  icon: build/icon.ico
+  requestedExecutionLevel: asInvoker
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+
+# 安装目录里放一份使用说明（安装版/便携版都会带在 exe 旁边）
+extraFiles:
+  - from: docs/使用说明.txt
+    to: 使用说明.txt
+
+# 安装版：可选安装目录、桌面/开始菜单快捷方式、卸载程序
+nsis:
+  oneClick: false
+  perMachine: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: BiliFound
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
+  deleteAppDataOnUninstall: false
+  runAfterFinish: true
+  artifactName: BiliFound-${version}-Setup-x64.${ext}
+
+# 便携版：单个 exe，运行时自解压到临时目录，不写注册表
+portable:
+  artifactName: BiliFound-${version}-Portable-x64.${ext}
+  requestExecutionLevel: user

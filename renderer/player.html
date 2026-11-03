@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>BiliFound Player</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; background: #000; overflow: hidden; }
+    #stage { position: relative; width: 100%; height: 100%; overflow: hidden; }
+    video { width: 100%; height: 100%; object-fit: contain; background: #000; display: block; }
+    #dm-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+    #sub {
+      position: absolute; left: 50%; bottom: 8%; transform: translateX(-50%);
+      max-width: 86%; padding: 4px 12px; border-radius: 8px;
+      background: rgba(0, 0, 0, .46); color: #fff; text-align: center;
+      font: 600 19px/1.45 -apple-system, "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, .7);
+      white-space: pre-wrap; display: none; pointer-events: none;
+    }
+    #dm-layer.off { display: none; }
+    .dm {
+      position: absolute; left: 100%; white-space: nowrap;
+      font: 600 20px/1.25 -apple-system, "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+      color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.85), 0 0 6px rgba(0,0,0,.5);
+      will-change: transform; animation-name: dm-move; animation-timing-function: linear; animation-fill-mode: forwards;
+    }
+    @keyframes dm-move { to { transform: translateX(calc(-100vw - 100%)); } }
+    #loading {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,.7); font: 13px -apple-system, "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+      background: #000; transition: opacity .3s;
+    }
+    #loading.hide { opacity: 0; pointer-events: none; }
+    /* 全屏控制层 */
+    #fs-ui { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .22s ease; }
+    body.fs #fs-ui.show { opacity: 1; }
+    #fs-ui .fs-exit {
+      position: absolute; top: 18px; right: 20px;
+      width: 38px; height: 38px; border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.35);
+      background: rgba(20,22,30,.55); color: #fff; font-size: 20px; line-height: 1;
+      cursor: pointer; pointer-events: auto;
+      backdrop-filter: blur(10px);
+    }
+    #fs-ui .fs-bar {
+      position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
+      width: min(860px, 86%);
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 16px; border-radius: 999px;
+      background: rgba(16,18,26,.62);
+      border: 1px solid rgba(255,255,255,.18);
+      backdrop-filter: blur(18px) saturate(160%);
+      pointer-events: auto;
+      color: #fff;
+    }
+    #fs-ui button {
+      width: 30px; height: 30px; border-radius: 50%;
+      border: 0; background: rgba(255,255,255,.14); color: #fff;
+      cursor: pointer; font-size: 12px; line-height: 1;
+    }
+    #fs-ui button:hover { background: rgba(255,255,255,.26); }
+    #fs-ui .fs-time { font: 11.5px/1 ui-monospace, monospace; opacity: .85; white-space: nowrap; }
+    #fs-ui input[type=range] { accent-color: #fb7299; }
+    #fs-seek { flex: 1; }
+    #fs-vol { width: 82px; }
+    #err { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; color: rgba(255,255,255,.75); font: 13px -apple-system, "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", sans-serif; text-align: center; padding: 24px; }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <video id="v" playsinline preload="auto"></video>
+    <audio id="a" preload="auto"></audio>
+    <div id="dm-layer"></div>
+    <div id="sub"></div>
+    <div id="fs-ui">
+      <button class="fs-exit" id="fs-exit" title="退出全屏（Esc）">×</button>
+      <div class="fs-bar">
+        <button id="fs-play" title="播放 / 暂停">❚❚</button>
+        <span class="fs-time" id="fs-time">0:00 / 0:00</span>
+        <input id="fs-seek" type="range" min="0" max="1000" value="0" />
+        <button id="fs-mute" title="静音">🔊</button>
+        <input id="fs-vol" type="range" min="0" max="100" value="100" />
+      </div>
+    </div>
+    <div id="loading">正在加载视频…</div>
+    <div id="err"></div>
+  </div>
+  <script>
+    (function () {
+      const params = new URLSearchParams(location.search);
+      const v = document.getElementById('v');
+      const layer = document.getElementById('dm-layer');
+      const loading = document.getElementById('loading');
+      const err = document.getElementById('err');
+
+      const src = params.get('src') || '';
+      const asrc = params.get('asrc') || '';
+      const start = Number(params.get('start') || 0);
+      const a = document.getElementById('a');
+
+      // 弹幕外观参数（来自设置）
+      const dmOpacity = Math.max(0.2, Math.min(1, Number(params.get('dmOpacity') || 1)));
+      const dmSize = Math.max(12, Math.min(34, Number(params.get('dmSize') || 20)));
+      const dmSpeed = Math.max(0.5, Math.min(2.4, Number(params.get('dmSpeed') || 1)));
+      const dmArea = Math.max(0.25, Math.min(0.9, Number(params.get('dmArea') || 0.5)));
+      const LANES = Math.max(2, Math.round(dmArea * 8));
+      layer.style.opacity = String(dmOpacity);
+      layer.style.setProperty('--dm-size', dmSize + 'px');
+
+      const subEl = document.getElementById('sub');
+      let subtitleCues = [];
+      window.__subOn = false;
+      window.__setSubtitle = (list) => {
+        subtitleCues = (list || []).slice().sort((a, b) => a.from - b.from);
+        window.__subOn = subtitleCues.length > 0;
+        subEl.style.display = window.__subOn ? 'block' : 'none';
+      };
+      window.__setSubtitleOn = (on) => {
+        window.__subOn = !!on && subtitleCues.length > 0;
+        subEl.style.display = window.__subOn ? 'block' : 'none';
+        return window.__subOn;
+      };
+      function tickSubtitle() {
+        if (!window.__subOn) return;
+        const t = v.currentTime;
+        let text = '';
+        for (let i = 0; i < subtitleCues.length; i += 1) {
+          const c = subtitleCues[i];
+          if (t >= c.from && t <= c.to) { text = c.text; break; }
+          if (c.from > t) break;
+        }
+        if (subEl.textContent !== text) subEl.textContent = text;
+      }
+
+      window.__dmOn = params.get('dmOn') !== '0';
+      layer.classList.toggle('off', !window.__dmOn);
+      let danmaku = [];
+      let spawned = new Set();
+      let laneNext = new Array(LANES).fill(0);
+
+      window.__setDanmaku = (list) => {
+        danmaku = (list || []).slice().sort((a, b) => a.time - b.time);
+        spawned = new Set();
+        laneNext = new Array(LANES).fill(0);
+      };
+      window.__setDanmakuOn = (on) => {
+        window.__dmOn = !!on;
+        layer.classList.toggle('off', !on);
+        if (!on) layer.innerHTML = '';
+        return on;
+      };
+
+      const fail = (msg) => {
+        err.style.display = 'flex';
+        err.textContent = msg || '视频加载失败';
+        loading.classList.add('hide');
+      };
+
+      if (!src) { fail('缺少视频地址'); return; }
+      v.src = src;
+
+      // DASH：视频流与音频流分离，用 audio 元素承载声音并保持同步
+      const hasAudio = !!asrc;
+      if (hasAudio) {
+        a.src = asrc;
+        const syncAudio = (seek) => {
+          try {
+            if (seek || Math.abs(a.currentTime - v.currentTime) > 0.25) {
+              a.currentTime = v.currentTime;
+            }
+            a.playbackRate = v.playbackRate;
+            a.volume = v.volume;
+            a.muted = v.muted;
+          } catch {}
+        };
+        v.addEventListener('play', () => { syncAudio(true); a.play().catch(() => {}); });
+        v.addEventListener('pause', () => a.pause());
+        v.addEventListener('seeking', () => { a.currentTime = v.currentTime; });
+        v.addEventListener('seeked', () => { syncAudio(true); if (!v.paused) a.play().catch(() => {}); });
+        v.addEventListener('ratechange', () => { a.playbackRate = v.playbackRate; });
+        v.addEventListener('volumechange', () => { a.volume = v.volume; a.muted = v.muted; });
+        v.addEventListener('ended', () => a.pause());
+        // 周期性纠偏，避免长时间播放漂移
+        setInterval(() => {
+          if (!v.paused && hasAudio && Math.abs(a.currentTime - v.currentTime) > 0.35) {
+            a.currentTime = v.currentTime;
+          }
+        }, 2000);
+        a.addEventListener('error', () => { a.style.display = 'none'; });
+      }
+
+      v.addEventListener('loadedmetadata', () => {
+        loading.classList.add('hide');
+        if (start > 1) { try { v.currentTime = start; } catch {} }
+        v.play().catch(() => {});
+      });
+      v.addEventListener('canplay', () => loading.classList.add('hide'));
+      v.addEventListener('error', () => fail('视频加载失败（可能是会员内容或地址过期）'));
+
+      // 点击播放/暂停；双击全屏（Windows 走窗口原生全屏，而不是视图内 DOM 全屏）
+      v.addEventListener('click', () => {
+        if (v.paused) v.play().catch(() => {}); else v.pause();
+      });
+      v.addEventListener('dblclick', () => {
+        if (window.playerBridge && window.playerBridge.toggleFs) {
+          window.playerBridge.toggleFs();
+          return;
+        }
+        const el = document.documentElement;
+        if (!document.fullscreenElement) el.requestFullscreen && el.requestFullscreen();
+        else document.exitFullscreen && document.exitFullscreen();
+      });
+
+      // 弹幕渲染
+      let lastTime = 0;
+      function tick() {
+        requestAnimationFrame(tick);
+        tickSubtitle();
+        if (!window.__dmOn || !danmaku.length) return;
+        const t = v.currentTime;
+        if (t < lastTime - 1) spawned = new Set(); // 后退时重置
+        lastTime = t;
+        for (let i = 0; i < danmaku.length; i += 1) {
+          const d = danmaku[i];
+          if (d.time > t) break;
+          if (spawned.has(i)) continue;
+          if (d.time < t - 0.6) { spawned.add(i); continue; }
+          spawned.add(i);
+          spawn(d);
+        }
+      }
+      function spawn(d) {
+        const now = performance.now();
+        let lane = -1;
+        for (let i = 0; i < laneNext.length; i += 1) {
+          if (laneNext[i] < now) { lane = i; break; }
+        }
+        if (lane < 0) return;
+        laneNext[lane] = now + 1400;
+        const el = document.createElement('div');
+        el.className = 'dm';
+        el.textContent = d.text;
+        el.style.top = (8 + lane * (dmSize * 1.5)) + 'px';
+        el.style.fontSize = dmSize + 'px';
+        el.style.color = '#' + Number(d.color || 16777215).toString(16).padStart(6, '0');
+        const dur = Math.max(4, Math.min(14, (4 + String(d.text).length * 0.12) / dmSpeed));
+        el.style.animationDuration = dur + 's';
+        layer.appendChild(el);
+        setTimeout(() => el.remove(), dur * 1000 + 200);
+      }
+      requestAnimationFrame(tick);
+
+      // 全屏控制层
+      const fsUi = document.getElementById('fs-ui');
+      const fsPlay = document.getElementById('fs-play');
+      const fsTime = document.getElementById('fs-time');
+      const fsSeek = document.getElementById('fs-seek');
+      const fsMute = document.getElementById('fs-mute');
+      const fsVol = document.getElementById('fs-vol');
+      let fsOn = false;
+      let fsTimer = null;
+      const fmtT = (s) => {
+        if (!Number.isFinite(s)) return '0:00';
+        const m = Math.floor(s / 60);
+        return `${m}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+      };
+      const showFsUi = () => {
+        if (!fsOn) return;
+        fsUi.classList.add('show');
+        clearTimeout(fsTimer);
+        fsTimer = setTimeout(() => fsUi.classList.remove('show'), 3200);
+      };
+      window.__setFs = (on) => {
+        fsOn = !!on;
+        document.body.classList.toggle('fs', fsOn);
+        if (fsOn) showFsUi();
+        else fsUi.classList.remove('show');
+      };
+      document.addEventListener('mousemove', showFsUi);
+      fsUi.addEventListener('mousemove', showFsUi);
+      document.getElementById('fs-exit').addEventListener('click', () => {
+        window.playerBridge && window.playerBridge.exitFs();
+      });
+      fsPlay.addEventListener('click', () => {
+        if (v.paused) v.play().catch(() => {}); else v.pause();
+      });
+      v.addEventListener('play', () => { fsPlay.textContent = '❚❚'; });
+      v.addEventListener('pause', () => { fsPlay.textContent = '▶'; });
+      const syncFsBar = () => {
+        fsSeek.value = String(v.duration ? Math.round((v.currentTime / v.duration) * 1000) : 0);
+        fsTime.textContent = `${fmtT(v.currentTime)} / ${fmtT(v.duration)}`;
+        fsMute.textContent = v.muted || v.volume === 0 ? '🔇' : '🔊';
+        fsVol.value = String(Math.round((v.muted ? 0 : v.volume) * 100));
+      };
+      v.addEventListener('timeupdate', syncFsBar);
+      v.addEventListener('volumechange', syncFsBar);
+      v.addEventListener('loadedmetadata', syncFsBar);
+      fsSeek.addEventListener('input', () => {
+        if (v.duration) v.currentTime = (Number(fsSeek.value) / 1000) * v.duration;
+      });
+      fsMute.addEventListener('click', () => { v.muted = !v.muted; syncFsBar(); });
+      fsVol.addEventListener('input', () => {
+        v.muted = false;
+        v.volume = Number(fsVol.value) / 100;
+        syncFsBar();
+      });
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && fsOn && window.playerBridge) window.playerBridge.exitFs();
+      });
+
+      // 滚轮：播放器是原生视图，滚轮事件到不了外壳，直接转发给主进程去滚动下方内容
+      // （视频页因此会随滚动收缩成迷你态；全屏时由主进程忽略）
+      window.addEventListener('wheel', (e) => {
+        if (!window.playerBridge || !window.playerBridge.wheel) return;
+        e.preventDefault();
+        const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? window.innerHeight : 1;
+        const d = e.deltaY * unit;
+        if (d) window.playerBridge.wheel(d);
+      }, { passive: false });
+
+      // 键盘：空格播放/暂停
+      window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+          e.preventDefault();
+          if (v.paused) v.play().catch(() => {}); else v.pause();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

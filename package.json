@@ -1,0 +1,25 @@
+{
+  "name": "bilifound",
+  "productName": "BiliFound",
+  "version": "1.0.0",
+  "description": "原生界面 · 液态玻璃的 Bilibili 桌面客户端（Windows 版）",
+  "main": "main.js",
+  "author": "styzn",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "icon": "python tools/make_icon.py",
+    "probe": "electron tools/probe-main.js",
+    "dist": "node tools/build-win.js --zip",
+    "setup": "electron-builder --win --x64 --config electron-builder.yml",
+    "release": "node tools/build-win.js --zip && electron-builder --win --x64 --config electron-builder.yml"
+  },
+  "devDependencies": {
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.0",
+    "electron-packager": "^17.1.2"
+  },
+  "dependencies": {
+    "hls.js": "^1.7.3"
+  }
+}

@@ -1,0 +1,34 @@
+# 依赖
+node_modules/
+
+# 构建产物
+dist/
+dist-installer/
+release-*/
+
+# 打包中间产物 / 探针截图（只保留图标与预览）
+build/*.png
+build/probe/
+!build/icon.png
+!build/icon-1024.png
+!build/icon-preview.png
+*.log
+
+# 二进制归档
+*.exe
+*.zip
+*.dmg
+*.7z
+*.pkg
+
+# 本地缓存
+.electron-cache/
+.eb-cache/
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp

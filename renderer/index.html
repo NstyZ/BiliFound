@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src https: data: file: blob:; media-src https: file: blob:;" />
+  <title>BiliFound</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- 背景层 -->
+  <div id="bg-base" class="bg-base" aria-hidden="true"></div>
+  <div id="bg-image" class="bg-image" aria-hidden="true"></div>
+  <div class="bg-aurora" id="bg-aurora" aria-hidden="true"><i class="g1"></i><i class="g2"></i><i class="g3"></i></div>
+  <div id="bg-grain" class="bg-grain" aria-hidden="true"></div>
+  <div id="bg-vignette" class="bg-vignette" aria-hidden="true"></div>
+
+  <div id="app">
+    <aside id="sidebar">
+      <div class="side-head">
+        <span class="brand"><i class="brand-dot"></i>BiliFound</span>
+      </div>
+      <nav class="side-nav" id="side-nav"></nav>
+      <div class="side-foot">
+        <button id="btn-login" class="side-btn" title="登录哔哩哔哩">
+          <img id="avatar" class="avatar" alt="" hidden />
+          <svg id="login-ico" viewBox="0 0 24 24"><circle cx="12" cy="8.2" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4.8 20c1.3-3.6 3.9-5.4 7.2-5.4s5.9 1.8 7.2 5.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <span id="login-label">登录</span>
+        </button>
+        <button id="btn-downloads" class="side-btn" title="下载文件夹">
+          <svg viewBox="0 0 24 24"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 19h16" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+          <span>下载</span>
+        </button>
+        <button id="btn-collapse" class="side-btn" title="收起侧边栏 (Ctrl+\)">
+          <svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.5 4.5v15" stroke="currentColor" stroke-width="1.8"/></svg>
+          <span>收起侧边栏</span>
+        </button>
+      </div>
+    </aside>
+
+    <section id="main">
+      <header id="toolbar">
+        <div class="tb-left">
+          <button id="btn-back" class="tb-btn" title="后退 (Ctrl+[ / Alt+←)">
+            <svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button id="btn-home" class="tb-btn" title="首页 (Ctrl+Shift+H)">
+            <svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9h12v-9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button id="btn-refresh" class="tb-btn" title="刷新 (F5 / Ctrl+R)">
+            <svg viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M19.8 4.6v4.2h-4.2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+
+        <form id="search-form" class="search-form" autocomplete="off">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.6" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M16 16l4.2 4.2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+          <input id="search-input" placeholder="搜索视频、番剧、UP 主" spellcheck="false" />
+          <kbd>Ctrl+F</kbd>
+        </form>
+
+        <div class="tb-right">
+          <button id="btn-palette" class="tb-btn" title="命令面板 (Ctrl+K)">
+            <svg viewBox="0 0 24 24"><path d="M9 9h6v6H9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 6.5a2.5 2.5 0 1 0-2.5 2.5H9M15 6.5A2.5 2.5 0 1 1 17.5 9H15M9 17.5A2.5 2.5 0 1 1 6.5 15H9M15 17.5a2.5 2.5 0 1 0 2.5-2.5H15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
+          <button id="btn-theme" class="tb-btn" title="外观 (Ctrl+Shift+D)">
+            <svg viewBox="0 0 24 24"><path d="M20 13A8 8 0 1 1 11 4a6.5 6.5 0 0 0 9 9z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg>
+          </button>
+          <button id="btn-immersive" class="tb-btn" title="沉浸模式 (Ctrl+Shift+I)">
+            <svg viewBox="0 0 24 24"><path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+          </button>
+          <button id="btn-fullscreen" class="tb-btn" title="全屏 (F11)">
+            <svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+          </button>
+          <button id="btn-settings" class="tb-btn" title="偏好设置 (Ctrl+,)">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.2 5.2l1.9 1.9M16.9 16.9l1.9 1.9M18.8 5.2l-1.9 1.9M7.1 16.9l-1.9 1.9" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+          </button>
+          <div id="win-controls" class="win-controls" hidden>
+            <button class="wc wc-min" data-cmd="minimize" title="最小化" aria-label="最小化">
+              <svg viewBox="0 0 12 12"><path d="M2.6 6h6.8" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+            </button>
+            <button class="wc wc-max" data-cmd="maximize" title="最大化" aria-label="最大化">
+              <svg viewBox="0 0 12 12" class="ico-max"><rect x="2.9" y="2.9" width="6.2" height="6.2" rx="1" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>
+              <svg viewBox="0 0 12 12" class="ico-restore"><path d="M4.4 3.4h3.2a1 1 0 0 1 1 1v3.2" fill="none" stroke="currentColor" stroke-width="1.1"/><rect x="2.6" y="4.6" width="4.8" height="4.8" rx="1" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>
+            </button>
+            <button class="wc wc-close" data-cmd="close" title="关闭" aria-label="关闭">
+              <svg viewBox="0 0 12 12"><path d="M3.3 3.3l5.4 5.4M8.7 3.3l-5.4 5.4" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div id="content">
+        <div id="view" class="view"></div>
+        <button id="scroll-top" class="scroll-top" title="回到顶部" hidden>
+          <svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <!-- 设置浮层 -->
+  <div id="settings-sheet" class="sheet-backdrop" hidden>
+    <div class="sheet sheet-lg">
+      <div class="sheet-head">
+        <span>偏好设置</span>
+        <button id="settings-close" class="tb-btn" title="关闭">×</button>
+      </div>
+      <div class="sheet-body">
+        <section class="set-section">
+          <h3>外观</h3>
+          <div class="row">
+            <span>主题</span>
+            <div class="seg" id="theme-seg">
+              <button data-theme="auto">自动</button>
+              <button data-theme="light">浅色</button>
+              <button data-theme="dark">深色</button>
+            </div>
+          </div>
+          <div class="row">
+            <span>强调色</span>
+            <div class="accents" id="accent-row">
+              <button class="accent" data-accent="pink" style="--a:#fb7299"></button>
+              <button class="accent" data-accent="violet" style="--a:#8b5cf6"></button>
+              <button class="accent" data-accent="blue" style="--a:#3b82f6"></button>
+              <button class="accent" data-accent="teal" style="--a:#14b8a6"></button>
+              <button class="accent" data-accent="amber" style="--a:#f59e0b"></button>
+            </div>
+          </div>
+          <div class="row">
+            <span>玻璃模糊 <em id="blur-val">30px</em></span>
+            <input type="range" id="set-blur" min="8" max="52" step="2" value="30" />
+          </div>
+          <div class="row">
+            <span>信息密度</span>
+            <div class="seg" id="density-seg">
+              <button data-density="comfortable">舒适</button>
+              <button data-density="compact">紧凑</button>
+            </div>
+          </div>
+          <label class="row">
+            <span>颗粒质感</span>
+            <input type="checkbox" id="set-grain" />
+          </label>
+        </section>
+
+        <section class="set-section">
+          <h3>设计风格</h3>
+          <div class="style-presets" id="style-presets"></div>
+          <div class="row set-note">只改卡片、圆角、字体与质感，不动布局；点一下立即生效。</div>
+        </section>
+
+        <section class="set-section">
+          <h3>背景</h3>
+          <div class="row">
+            <span>类型</span>
+            <div class="seg" id="bg-type-seg">
+              <button data-bg="aurora">极光</button>
+              <button data-bg="gradient">渐变</button>
+              <button data-bg="color">纯色</button>
+              <button data-bg="image">图片</button>
+            </div>
+          </div>
+          <div class="bg-presets" id="bg-presets"></div>
+          <div class="row">
+            <span>图片</span>
+            <div class="bg-actions">
+              <button id="bg-pick" class="glass-btn">选择图片…</button>
+              <button id="bg-clear" class="glass-btn">清除</button>
+            </div>
+          </div>
+          <div class="row">
+            <span>背景模糊 <em id="bgblur-val">0px</em></span>
+            <input type="range" id="set-bg-blur" min="0" max="30" step="1" value="0" />
+          </div>
+          <div class="row">
+            <span>背景遮罩 <em id="bgdim-val">15%</em></span>
+            <input type="range" id="set-bg-dim" min="0" max="70" step="5" value="15" />
+          </div>
+        </section>
+
+        <section class="set-section">
+          <h3>播放</h3>
+          <label class="row">
+            <span>自动播放</span>
+            <input type="checkbox" id="set-autoplay" />
+          </label>
+          <label class="row">
+            <span>显示弹幕</span>
+            <input type="checkbox" id="set-danmaku" />
+          </label>
+          <div class="row">
+            <span>弹幕大小 <em id="dmsize-val">20px</em></span>
+            <input type="range" id="set-dm-size" min="14" max="30" step="1" value="20" />
+          </div>
+          <div class="row">
+            <span>弹幕不透明度 <em id="dmop-val">100%</em></span>
+            <input type="range" id="set-dm-opacity" min="20" max="100" step="5" value="100" />
+          </div>
+          <div class="row">
+            <span>弹幕速度 <em id="dmsp-val">1.0×</em></span>
+            <input type="range" id="set-dm-speed" min="6" max="20" step="1" value="10" />
+          </div>
+        </section>
+
+        <section class="set-section">
+          <h3>下载</h3>
+          <div class="row">
+            <span>目录</span>
+            <span id="dl-path" class="path">—</span>
+          </div>
+          <div class="row">
+            <span>已下载</span>
+            <span id="dl-count" class="path">—</span>
+          </div>
+          <div class="dl-list" id="dl-list"></div>
+          <div class="sheet-actions">
+            <button id="btn-open-downloads" class="glass-btn">打开下载文件夹</button>
+            <button id="btn-pick-dl-dir" class="glass-btn">更改目录…</button>
+            <button id="btn-reset-dl-dir" class="glass-btn">恢复默认</button>
+            <button id="btn-clear-cache" class="glass-btn">清除缓存</button>
+          </div>
+        </section>
+
+        <section class="set-section">
+          <h3>更新</h3>
+          <div class="row">
+            <span>当前版本</span>
+            <span id="up-current" class="path">—</span>
+          </div>
+          <div class="row">
+            <span>更新地址</span>
+            <input id="up-feed" class="up-input" placeholder="https://…/latest.json" spellcheck="false" />
+          </div>
+          <label class="row">
+            <span>启动时自动检查</span>
+            <input type="checkbox" id="up-auto" />
+          </label>
+          <div class="sheet-actions">
+            <button id="btn-check-update" class="glass-btn">检查更新</button>
+            <button id="btn-install-update" class="glass-btn" hidden>下载并安装</button>
+            <button id="btn-reveal-update" class="glass-btn" hidden>打开下载位置</button>
+          </div>
+          <div class="up-status" id="up-status">点「检查更新」看看有没有新版本</div>
+        </section>
+
+        <p class="about">BiliFound · 原生界面 · 液态玻璃 · Windows 版 · <span id="about-ver">v1.2.0</span></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 命令面板 -->
+  <div id="palette" class="palette-backdrop" hidden>
+    <div class="palette">
+      <div class="palette-input-wrap">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.6" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M16 16l4.2 4.2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+        <input id="palette-input" placeholder="输入命令或页面名称…" spellcheck="false" />
+        <kbd>esc</kbd>
+      </div>
+      <div class="palette-list" id="palette-list"></div>
+    </div>
+  </div>
+
+  <!-- 快捷键面板 -->
+  <div id="shortcuts-sheet" class="sheet-backdrop" hidden>
+    <div class="sheet">
+      <div class="sheet-head">
+        <span>键盘快捷键</span>
+        <button id="shortcuts-close" class="tb-btn" title="关闭">×</button>
+      </div>
+      <div class="keys-grid" id="keys-grid"></div>
+    </div>
+  </div>
+
+  <!-- 拖拽背景提示 -->
+  <div id="drop-hint" class="drop-hint" hidden>
+    <div class="drop-hint-inner">松开即可设为背景</div>
+  </div>
+
+  <div id="toast-stack" class="toast-stack"></div>
+  <script src="app.js"></script>
+</body>
+</html>
