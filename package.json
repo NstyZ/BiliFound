@@ -2,7 +2,7 @@
   "name": "bilifound",
   "productName": "BiliFound",
   "version": "1.0.0",
-  "description": "原生界面 · 液态玻璃的 Bilibili 桌面客户端（Windows 版）",
+  "description": "原生界面 · 液态玻璃的 Bilibili 桌面客户端（Windows / macOS）",
   "main": "main.js",
   "author": "styzn",
   "license": "MIT",
@@ -11,15 +11,23 @@
     "icon": "python tools/make_icon.py",
     "probe": "electron tools/probe-main.js",
     "dist": "node tools/build-win.js --zip",
+    "dist:mac": "bash tools/make-icns.sh build/icon-1024.png && npx electron-packager . BiliFound --platform=darwin --arch=arm64 --icon=build/icon.icns --app-bundle-id=com.styzn.bilifound --overwrite --ignore=\"^/build\" --ignore=\"^/tools\" --ignore=\"/node_modules/electron/dist\"",
     "setup": "electron-builder --win --x64 --config electron-builder.yml",
     "release": "node tools/build-win.js --zip && electron-builder --win --x64 --config electron-builder.yml"
   },
   "devDependencies": {
     "electron": "^38.0.0",
-    "electron-builder": "^26.0.0",
-    "electron-packager": "^17.1.2"
+    "electron-packager": "^17.1.2",
+    "electron-builder": "^26.0.0"
+  },
+  "allowScripts": {
+    "electron@38.8.6": true
   },
   "dependencies": {
     "hls.js": "^1.7.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NstyZ/BiliFound"
   }
 }
