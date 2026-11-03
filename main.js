@@ -18,6 +18,7 @@ const {
   screen,
 } = require('electron');
 const path = require('path');
+const { execFile } = require('child_process');
 const fs = require('fs');
 const crypto = require('crypto');
 const zlib = require('zlib');
@@ -33,6 +34,21 @@ const USER_AGENT = isWin
   : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36';
 
 /* ------------------------------ 应用标识 / 数据迁移 ------------------------------ */
+
+const PKG = require('./package.json');
+
+function repoFromPackage() {
+  const r = PKG.repository;
+  const url = typeof r === 'string' ? r : (r && r.url) || '';
+  const m = String(url).match(/github\.com[/:]([^/]+)\/([^/.]+)/i);
+  return m ? `${m[1]}/${m[2]}` : '';
+}
+
+// 仓库地址只在这里配置一次；更新源与「关于」都从这里派生
+const GITHUB_REPO = repoFromPackage();
+const DEFAULT_UPDATE_FEED = GITHUB_REPO
+  ? `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`
+  : '';
 
 const APP_NAME = 'BiliFound';
 const APP_ID = 'com.styzn.bilifound';
@@ -2310,11 +2326,39 @@ function pickUpdateAsset(data) {
 }
 
 async function checkUpdate({ force = false } = {}) {
-  const feed = String(settings.updateFeed || '').trim();
-  if (!feed) return { ok: false, code: 'no-feed', message: '还没有配置更新地址（设置 → 更新）' };
+  const feed = String(settings.updateFeed || '').trim() || DEFAULT_UPDATE_FEED;
+  if (!feed) return { ok: false, code: 'no-feed', message: '还没有配置更新地址（设置 → 更新，或填写仓库地址）' };
   if (!/^https?:/i.test(feed)) return { ok: false, code: 'bad-feed', message: '更新地址必须是 http(s) 链接' };
   try {
     const data = await fetchJsonNoCache(feed);
+
+    // GitHub Releases API：tag_name / body / assets
+    if (data && data.tag_name) {
+      const latest = String(data.tag_name).replace(/^v/i, '').trim();
+      const current = app.getVersion();
+      const assets = (data.assets || []).map((a) => ({
+        name: String(a.name || ''),
+        url: String(a.browser_download_url || ''),
+        size: Number(a.size) || 0,
+      }));
+      const mac = assets.find((a) => /\.(zip|dmg)$/i.test(a.name) && /(mac|arm64|darwin)/i.test(a.name))
+        || assets.find((a) => /\.(zip|dmg)$/i.test(a.name))
+        || assets[0];
+      settings.lastUpdateCheck = Date.now();
+      saveSettings();
+      return {
+        ok: true,
+        source: 'github',
+        current,
+        latest,
+        newer: compareVersion(latest, current) > 0,
+        skipped: !force && settings.updateSkipped === latest,
+        notes: String(data.body || ''),
+        publishedAt: String(data.published_at || ''),
+        asset: mac ? { url: mac.url, size: mac.size, sha256: '' } : { url: '', sha256: '', size: 0 },
+      };
+    }
+
     const latest = String(data.version || '').trim();
     if (!latest) return { ok: false, code: 'bad-manifest', message: '更新清单缺少 version 字段' };
     const current = app.getVersion();
@@ -2337,7 +2381,7 @@ async function checkUpdate({ force = false } = {}) {
 }
 
 ipcMain.handle('update:check', (_e, opts) => checkUpdate(opts || {}));
-ipcMain.handle('update:version', () => ({ version: app.getVersion(), feed: settings.updateFeed || '' }));
+ipcMain.handle('update:version', () => ({ version: app.getVersion(), feed: settings.updateFeed || DEFAULT_UPDATE_FEED, customFeed: settings.updateFeed || '', repo: GITHUB_REPO }));
 ipcMain.handle('update:skip', (_e, version) => {
   settings.updateSkipped = String(version || '');
   saveSettings();
@@ -2407,7 +2451,19 @@ ipcMain.handle('update:reveal', (_e, filePath) => {
 ipcMain.handle('update:install', async (_e, { file, quit = true } = {}) => {
   try {
     if (!file || !fs.existsSync(String(file))) return { ok: false, message: '安装包不存在，请重新下载' };
-    const err = await shell.openPath(String(file));
+    const target = String(file);
+    // macOS：zip 先解压，再揭示 .app；dmg / 其它交给系统
+    if (isMac && /\.zip$/i.test(target)) {
+      const out = path.join(app.getPath('temp'), 'BiliFound-update', 'extracted');
+      fs.rmSync(out, { recursive: true, force: true });
+      fs.mkdirSync(out, { recursive: true });
+      await new Promise((resolve, reject) => {
+        execFile('ditto', ['-x', '-k', target, out], (e) => (e ? reject(e) : resolve()));
+      });
+      shell.openPath(out);
+      return { ok: true, extracted: out };
+    }
+    const err = await shell.openPath(target);
     if (err) return { ok: false, message: err };
     // 安装器要替换正在运行的 exe：稍等再退出，交给安装程序接管
     if (quit) setTimeout(() => app.quit(), 1200);
@@ -2420,7 +2476,7 @@ ipcMain.handle('update:install', async (_e, { file, quit = true } = {}) => {
 /* 启动后静默检查一次（6 小时内不重复；可在设置里关掉） */
 function autoCheckUpdateSoon(entry) {
   if (!settings.updateAutoCheck) return;
-  if (!String(settings.updateFeed || '').trim()) return;
+  if (!String(settings.updateFeed || '').trim() && !DEFAULT_UPDATE_FEED) return;
   const last = Number(settings.lastUpdateCheck || 0);
   if (last && Date.now() - last < 6 * 3600 * 1000) return;
   setTimeout(async () => {
