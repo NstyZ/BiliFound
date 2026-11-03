@@ -2,13 +2,16 @@
   "version": "1.0.0",
   "notes": "首个公开版本：首页混排 + 换一批、自建播放器、直播两栏与弹幕屏蔽、搜索面板、5 套设计风格",
   "publishedAt": "2026-11-03",
-  "url": "https://github.com/<user>/BiliFound/releases/download/v1.0.0/BiliFound-1.0.0-Setup-x64.exe",
+  "url": "https://github.com/NstyZ/BiliFound/releases/download/v1.0.0/BiliFound-1.0.0-Setup-x64.exe",
   "size": 98329587,
   "sha256": "7f78bb606adfc8e6b4f86a247d40f02d3b9501046617792d76dc421dd3bc44a8",
-  "portableUrl": "https://github.com/<user>/BiliFound/releases/download/v1.0.0/BiliFound-1.0.0-Portable-x64.exe",
+  "portableUrl": "https://github.com/NstyZ/BiliFound/releases/download/v1.0.0/BiliFound-1.0.0-Portable-x64.exe",
   "portableSize": 98001170,
   "portableSha256": "5b0f9af115aed553667b8e59cf91ce594301aac7f3686cd2e601525779e3ae94",
-  "macUrl": "https://github.com/<user>/BiliFound/releases/download/v1.0.0/BiliFound-1.0.0-arm64.zip",
-  "macSize": 118181643,
-  "macSha256": "f07853be318ae2b2a0a278d5319d4d5ee3e8893c48a7697f4554fe5a0b4a6a93"
+  "macUrl": "https://github.com/NstyZ/BiliFound/releases/download/v1.0.0/BiliFound-1.0.0-arm64.zip",
+  "macSize": 118204490,
+  "macSha256": "31cc69599b3deee3740e616858bde908400e7da64a84c77be6fc41b8ccf16c68",
+  "macDmgUrl": "https://github.com/NstyZ/BiliFound/releases/download/v1.0.0/BiliFound-1.0.0-arm64.dmg",
+  "macDmgSize": 131442263,
+  "macDmgSha256": "ab84f240c7941d94757adcac343260a1a612b14b0176bc8f2a096471ece93a50"
 }
