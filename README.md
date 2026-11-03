@@ -78,7 +78,7 @@
 
 > Windows 安装包同样未做代码签名，首次运行如提示「Windows 已保护你的电脑」→
 > 点「更多信息 → 仍要运行」。各产物的 SHA256 见
-> [release-1.0.0/SHA256SUMS.txt](release-1.0.0/SHA256SUMS.txt) 与 [WINDOWS版说明.md](WINDOWS版说明.md)。
+> [SHA256SUMS.txt](SHA256SUMS.txt) 与 [WINDOWS版说明.md](WINDOWS版说明.md)。
 
 ## 从源码运行
 
