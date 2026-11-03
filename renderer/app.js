@@ -592,7 +592,7 @@ function paintUpdateInfo(info) {
   const ver = $('about-ver');
   if (ver) ver.textContent = `v${info.version}`;
   const feed = $('up-feed');
-  if (feed && !feed.value) feed.value = info.feed || '';
+  if (feed && !feed.value) feed.value = info.customFeed || '';
 }
 
 async function initUpdatePanel() {
@@ -600,8 +600,10 @@ async function initUpdatePanel() {
   paintUpdateInfo(info);
   const auto = $('up-auto');
   if (auto) auto.checked = state.settings.updateAutoCheck !== false;
-  if (info && !info.feed) {
-    setUpdateStatus('还没有配置更新地址：把打包好的 latest.json 传到任意静态托管，把链接填到上面即可。');
+  if (info && !info.customFeed) {
+    setUpdateStatus(info.repo
+      ? `留空即从 GitHub Releases 检查更新（${info.repo}）`
+      : '还没有配置更新地址：留空使用 GitHub Releases，或填写 latest.json 地址。');
   }
 }
 
