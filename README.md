@@ -70,6 +70,7 @@
 
 | 文件 | 适合 |
 | --- | --- |
+| `BiliFound-1.0.0-arm64.dmg` | **推荐**：打开 dmg，把 `BiliFound.app` 拖进 Applications |
 | `BiliFound-1.0.0-arm64.zip` | **免安装**：解压后把 `BiliFound.app` 拖进「应用程序」或任意目录 |
 
 > macOS 版为 **arm64 原生构建**，Apple Silicon（M 系列）机型可直接运行；不支持 Intel Mac。
