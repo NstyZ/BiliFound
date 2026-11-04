@@ -104,6 +104,8 @@ let settings = {
   autoplay: true,
   // 音量跟软件走，不跟视频走（0~1）
   volume: 1,
+  // 倍速也跟软件走
+  rate: 1,
   danmaku: true,
   downloadDir: '',
   // 应用内更新：清单地址（静态 JSON），留空则不检查
@@ -2162,13 +2164,62 @@ ipcMain.on('player:quality', async (event, { qn, startAt }) => {
   }
 });
 
+// 发弹幕（视频）：走 B 站 dm/post 接口，进度用毫秒
+ipcMain.handle('danmaku:send', async (event, payload) => {
+  const entry = entryForView(event) || entryFor(event);
+  const meta = (entry && entry.playerMeta) || {};
+  const cid = (payload && payload.cid) || meta.cid;
+  const text = String((payload && payload.text) || '').trim();
+  if (!text) return { code: -1, message: '弹幕内容不能为空' };
+  if (text.length > 100) return { code: -1, message: '弹幕最长 100 个字' };
+  if (!cid) return { code: -1, message: '缺少视频信息，请重新打开视频' };
+  const r = await apiPost('/x/v2/dm/post', {
+    type: 1,
+    oid: cid,
+    msg: text,
+    progress: Math.max(0, Math.round(Number(payload.progress) || 0)),
+    color: Number(payload.color) || 16777215,
+    fontsize: 25,
+    pool: 0,
+    mode: Number(payload.mode) || 1,
+    plat: 1,
+  });
+  return r || { code: -1, message: '发送失败' };
+});
+
+// 播放器内面板（弹幕设置 / 倍速 / 发弹幕）：面板在播放器视图里，才不会被原生层挡住
+ipcMain.on('player:panel', (event, name) => {
+  const entry = entryFor(event) || entryForView(event);
+  if (!entry || !entry.player || entry.player.webContents.isDestroyed()) return;
+  const safe = JSON.stringify(String(name || 'danmaku'));
+  entry.player.webContents.executeJavaScript(`window.__openPanel && window.__openPanel(${safe})`).catch(() => {});
+});
+
+// 播放器里改了倍速 → 同步外壳标签
+ipcMain.on('player:rate', (event, rate) => {
+  const entry = entryForView(event) || entryFor(event);
+  const v = Math.max(0.25, Math.min(4, Number(rate) || 1));
+  if (entry && entry.win) sendToWin(entry.win, 'player-rate', v);
+});
+
+// 播放器里改了弹幕样式 → 存设置
+ipcMain.on('player:dm-config', (_event, cfg) => {
+  if (!cfg || typeof cfg !== 'object') return;
+  const allow = ['danmakuOpacity', 'danmakuSize', 'danmakuSpeed', 'danmakuArea',
+    'dmScroll', 'dmFixed', 'dmColor', 'dmScale', 'dmSafe', 'dmSmart', 'dmWords'];
+  for (const k of allow) {
+    if (Object.prototype.hasOwnProperty.call(cfg, k)) settings[k] = cfg[k];
+  }
+  saveSettings();
+});
+
 ipcMain.on('player:volume', (event, value) => {
   const v = Math.max(0, Math.min(1, Number(value)));
   if (!Number.isFinite(v)) return;
   if (Math.abs(v - Number(settings.volume ?? 1)) < 0.001) return; // 回声，忽略
   settings.volume = v;
   saveSettings();
-  const entry = entryFor(event);
+  const entry = entryForView(event) || entryFor(event);
   if (entry && entry.win) sendToWin(entry.win, 'player-volume', v);
 });
 

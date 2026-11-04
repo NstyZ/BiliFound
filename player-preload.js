@@ -6,4 +6,7 @@ contextBridge.exposeInMainWorld('playerBridge', {
   toggleFs: () => ipcRenderer.send('player:toggle-fs'),
   wheel: (dy) => ipcRenderer.send('player:wheel', dy),
   volume: (v) => ipcRenderer.send('player:volume', v),
+  sendDanmaku: (payload) => ipcRenderer.invoke('danmaku:send', payload),
+  dmConfig: (cfg) => ipcRenderer.send('player:dm-config', cfg),
+  rate: (v) => ipcRenderer.send('player:rate', v),
 });

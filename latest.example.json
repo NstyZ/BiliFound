@@ -1,14 +1,14 @@
 {
-  "version": "1.0.1",
-  "notes": "偏好设置齿轮图标、默认画质（不支持时自动用最高画质）、视频页弹幕设置面板、更新源默认指向本项目仓库",
-  "publishedAt": "2026-11-03",
-  "url": "https://github.com/NstyZ/BiliFound/releases/download/v1.0.1/BiliFound-1.0.1-Setup-x64.exe",
-  "size": 98336538,
-  "sha256": "822abf63f6848782c1925129e8ce8c9bf5442c844d4228bee07395c4970f12e7",
-  "portableUrl": "https://github.com/NstyZ/BiliFound/releases/download/v1.0.1/BiliFound-1.0.1-Portable-x64.exe",
-  "portableSize": 98008147,
-  "portableSha256": "a5f7f107d9cab817b41e1465bf1c334c897c7f2520216395add20283d3bbcecb",
-  "macUrl": "https://github.com/NstyZ/BiliFound/releases/download/v1.0.1/BiliFound-1.0.1-arm64.zip",
-  "macSize": 121384324,
-  "macSha256": "1927d6bd637ef9252829a4a03893cb5ac82bd1696ab5eb5fccc8fde9f887059c"
+  "version": "1.0.2",
+  "notes": "倍速自选 + 长按三倍速；弹幕设置/倍速/发弹幕改为播放器内浮层；全屏加四个按钮；新增视频与直播发弹幕",
+  "publishedAt": "2026-11-04",
+  "url": "https://github.com/NstyZ/BiliFound/releases/download/v1.0.2/BiliFound-1.0.2-Setup-x64.exe",
+  "size": 98339029,
+  "sha256": "b0d52a6e920312fc57bba64ac3542977c4725ad81887f41a4e2d20100426464a",
+  "portableUrl": "https://github.com/NstyZ/BiliFound/releases/download/v1.0.2/BiliFound-1.0.2-Portable-x64.exe",
+  "portableSize": 98010618,
+  "portableSha256": "33f90eeee986b8f2405fb92ba4f7ea894625016b18c07564d31f873697a09254",
+  "macUrl": "https://github.com/NstyZ/BiliFound/releases/download/v1.0.2/BiliFound-1.0.2-arm64.zip",
+  "macSize": 121386582,
+  "macSha256": "8e552e2109acd82bbbc2adcfefd13205618fdb95039811bd699e232ea8d40a10"
 }

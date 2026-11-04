@@ -11,7 +11,7 @@
 <img alt="platform" src="https://img.shields.io/badge/Windows_10_1809%2B_%2F_11-x64-0078D4?logo=windows&logoColor=white" />
 <img alt="macos" src="https://img.shields.io/badge/macOS-Apple_Silicon-000000?logo=apple&logoColor=white" />
 <img alt="electron" src="https://img.shields.io/badge/Electron-38.8.6-47848F?logo=electron&logoColor=white" />
-<img alt="version" src="https://img.shields.io/badge/version-1.0.1-fb7299" />
+<img alt="version" src="https://img.shields.io/badge/version-1.0.2-fb7299" />
 <img alt="use" src="https://img.shields.io/badge/use-仅供学习交流-lightgrey" />
 
 </div>
@@ -46,8 +46,8 @@
 | 模块 | 说明 |
 | --- | --- |
 | **首页** | 顶部大轮播（5 张自动切换）+ 侧卡 + 统一网格；列数随窗口自适应（小窗 4 列、全屏 5 列）；右上角「换一批」重新拉推荐 |
-| **视频页** | 自建播放器：DASH 双流、清晰度切换、弹幕浮层、**弹幕设置面板**（类型过滤 / 随屏缩放 / 防挡字幕 / 屏蔽词 / 区域·透明度·字号·速度）、CC 字幕、倍速、截图、画中画、播放器全屏、**全局音量记忆**；分 P 选集、相关推荐、评论/弹幕双 Tab、一键三连、投币、收藏、下载、进度记忆（5 秒一存，自动续播） |
-| **直播** | 左播放器 + 右侧弹幕栏；弹幕带用户等级、粉丝牌、舰队徽章；点赞、表情、按关键词/等级屏蔽；多 CDN 探测取流、画质切换、全屏 |
+| **视频页** | 自建播放器：DASH 双流、清晰度切换、弹幕浮层、**自选倍速（0.5×–3×）**、**长按 ← / → 3 倍速**、**发弹幕**、**弹幕设置面板**（类型过滤 / 随屏缩放 / 防挡字幕 / 屏蔽词 / 区域·透明度·字号·速度，浮层叠在画面上）、CC 字幕、倍速、截图、画中画、播放器全屏、**全局音量记忆**；分 P 选集、相关推荐、评论/弹幕双 Tab、一键三连、投币、收藏、下载、进度记忆（5 秒一存，自动续播） |
+| **直播** | 左播放器 + 右侧弹幕栏；弹幕带用户等级、粉丝牌、舰队徽章；**可发弹幕**、点赞、表情、按关键词/等级屏蔽；多 CDN 探测取流、画质切换、全屏 |
 | **关注直播** | 动态页左栏显示关注中正在直播的主播（真实总数），「全部 ›」进入完整列表页，无限翻页 |
 | **搜索** | 点开即「搜索历史 + bilibili 热搜」，输入即联想、命中词标红，↑↓ 选择 / Enter 搜索 |
 | **动态** | 全类型卡片（图文/转发/视频/番剧/专栏/直播/音乐/合集）、按 UP 筛选、动态详情 + 评论、发布/转发/删除 |

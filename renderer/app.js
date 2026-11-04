@@ -563,6 +563,14 @@ function toast(text) {
     setTimeout(() => el.remove(), 220);
   }, 2400);
 }
+bridge.on('player-rate', (rate) => {
+  const val = Math.max(0.25, Math.min(4, Number(rate) || 1));
+  state.settings.rate = val;
+  const el = $('ctl-speed');
+  if (el) el.textContent = fmtRate(val);
+  bridge.setSettings({ rate: val }).catch(() => {});
+});
+
 bridge.on('player-volume', (value) => {
   const v = Math.max(0, Math.min(1, Number(value)));
   if (!Number.isFinite(v)) return;
@@ -1700,6 +1708,7 @@ async function renderVideo(bvid) {
             <button class="ctl-btn ctl-speed ctl-opt" id="ctl-speed" title="播放速度">1.0x</button>
             <button class="ctl-btn ctl-quality ctl-opt" id="ctl-quality" title="画质">画质</button>
             <button class="ctl-btn ctl-opt" id="ctl-dm" title="弹幕开关">弹</button>
+            <button class="ctl-btn ctl-opt" id="ctl-dm-send" title="发弹幕">✎</button>
             <button class="ctl-btn ctl-opt" id="ctl-dm-set" title="弹幕设置">
               <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 4.4v1.7M12 17.9v1.7M4.4 12h1.7M17.9 12h1.7M6.6 6.6l1.2 1.2M16.2 16.2l1.2 1.2M6.6 17.4l1.2-1.2M16.2 7.8l1.2-1.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
             </button>
@@ -1716,45 +1725,6 @@ async function renderVideo(bvid) {
           </div>
         </div>
       </div>
-      <div class="dm-panel" id="dm-panel" hidden>
-        <div class="dmp-head">弹幕设置</div>
-        <div class="dmp-title">按类型过滤</div>
-        <div class="dmp-types">
-          <button class="dmp-type on" data-k="scroll" title="滚动弹幕">
-            <svg viewBox="0 0 24 24"><path d="M3.5 9h11M3.5 15h17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-            <span>滚动</span>
-          </button>
-          <button class="dmp-type on" data-k="fixed" title="固定弹幕（顶部/底部）">
-            <svg viewBox="0 0 24 24"><rect x="4" y="6.5" width="16" height="3.4" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.7"/><rect x="4" y="14" width="16" height="3.4" rx="1.7" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>
-            <span>固定</span>
-          </button>
-          <button class="dmp-type on" data-k="color" title="彩色弹幕">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.4" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="9.2" cy="9.6" r="1.15" fill="currentColor"/><circle cx="14.8" cy="9.6" r="1.15" fill="currentColor"/><circle cx="12" cy="14.6" r="1.15" fill="currentColor"/></svg>
-            <span>彩色</span>
-          </button>
-        </div>
-        <label class="dmp-check"><input type="checkbox" id="dmp-scale" /> 弹幕随屏幕缩放</label>
-        <label class="dmp-check"><input type="checkbox" id="dmp-safe" /> 防挡字幕</label>
-        <label class="dmp-check"><input type="checkbox" id="dmp-smart" /> 智能防挡弹幕</label>
-        <div class="dmp-row">
-          <button class="dmp-btn" id="dmp-words">弹幕屏蔽词</button>
-          <button class="dmp-btn" id="dmp-sync">同步屏蔽列表</button>
-        </div>
-        <div class="dmp-slider"><span>显示区域</span><input type="range" id="dmp-area" min="25" max="90" step="5" /><em id="dmp-area-v">50%</em></div>
-        <div class="dmp-slider"><span>不透明度</span><input type="range" id="dmp-opacity" min="20" max="100" step="5" /><em id="dmp-opacity-v">100%</em></div>
-        <div class="dmp-slider"><span>弹幕字号</span><input type="range" id="dmp-size" min="14" max="34" step="1" /><em id="dmp-size-v">20px</em></div>
-        <div class="dmp-slider"><span>弹幕速度</span><input type="range" id="dmp-speed" min="6" max="20" step="1" /><em id="dmp-speed-v">1.0×</em></div>
-        <div class="dmp-sep"></div>
-        <button class="dmp-adv" id="dmp-adv"><span>高级设置</span><span class="dmp-arrow">›</span></button>
-        <div class="dmp-adv-body" id="dmp-adv-body" hidden>
-          <textarea id="dmp-words-input" class="dmp-textarea" placeholder="每行一个屏蔽词，或用逗号分隔&#10;例如：剧透, 打卡" spellcheck="false"></textarea>
-          <div class="dmp-row">
-            <button class="dmp-btn" id="dmp-words-save">保存屏蔽词</button>
-            <button class="dmp-btn" id="dmp-words-clear">清空</button>
-          </div>
-        </div>
-      </div>
-
       <div class="watch-scroll" id="watch-scroll">
         <div id="watch-body">${skeletons(3)}</div>
       </div>
@@ -1940,7 +1910,8 @@ async function renderVideo(bvid) {
 let playerPollTimer = null;
 let seeking = false;
 let speedIdx = 0;
-const SPEEDS = [1, 1.25, 1.5, 2, 0.75, 0.5];
+const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3];
+const fmtRate = (r) => `${Number(r || 1).toFixed(2).replace(/0$/, '')}x`;
 
 function fmtClock(sec) {
   const n = Math.max(0, Math.floor(Number(sec) || 0));
@@ -2037,152 +2008,17 @@ function bindControls() {
     });
   }
 
-  /* --- 弹幕设置面板（视频页） --- */
-  const dmPanel = $('dm-panel');
+  /* --- 弹幕设置 / 发送：面板在播放器视图内部 --- */
   const dmSetBtn = $('ctl-dm-set');
-  if (dmPanel && dmSetBtn) {
-    const dmCfg = () => {
-      const st = state.settings || {};
-      return {
-        opacity: Number(st.danmakuOpacity ?? 1),
-        size: Number(st.danmakuSize ?? 20),
-        speed: Number(st.danmakuSpeed ?? 1),
-        area: Number(st.danmakuArea ?? 0.5),
-        scroll: st.dmScroll !== false,
-        fixed: st.dmFixed !== false,
-        color: st.dmColor !== false,
-        scale: st.dmScale !== false,
-        safe: st.dmSafe !== false,
-        smart: !!st.dmSmart,
-        words: String(st.dmWords || ''),
-      };
-    };
-    const pushDm = () => { try { bridge.playerDmStyle(dmCfg()); } catch {} };
-    const saveDm = (patch) => {
-      Object.assign(state.settings, patch);
-      bridge.setSettings(patch).catch(() => {});
-      pushDm();
-    };
-    const paintRange = (el) => {
-      if (!el) return;
-      const min = Number(el.min) || 0;
-      const max = Number(el.max) || 100;
-      const v = Number(el.value) || 0;
-      const pct = max > min ? ((v - min) / (max - min)) * 100 : 0;
-      el.style.setProperty('--p', `${pct.toFixed(1)}%`);
-    };
-
-    const paintDmPanel = () => {
-      const st = state.settings || {};
-      const on = (k) => st[k] !== false;
-      dmPanel.querySelectorAll('.dmp-type').forEach((b) => {
-        const k = b.dataset.k;
-        const v = k === 'scroll' ? on('dmScroll') : k === 'fixed' ? on('dmFixed') : on('dmColor');
-        b.classList.toggle('on', v);
-      });
-      const setChk = (id, v) => { const el = $(id); if (el) el.checked = !!v; };
-      setChk('dmp-scale', on('dmScale'));
-      setChk('dmp-safe', on('dmSafe'));
-      setChk('dmp-smart', !!st.dmSmart);
-      const setRange = (id, val, label, fmt) => {
-        const el = $(id); const em = $(label);
-        if (el) { el.value = String(val); paintRange(el); }
-        if (em) em.textContent = fmt;
-      };
-      setRange('dmp-area', Math.round((st.danmakuArea ?? 0.5) * 100), 'dmp-area-v', `${Math.round((st.danmakuArea ?? 0.5) * 100)}%`);
-      setRange('dmp-opacity', Math.round((st.danmakuOpacity ?? 1) * 100), 'dmp-opacity-v', `${Math.round((st.danmakuOpacity ?? 1) * 100)}%`);
-      setRange('dmp-size', Number(st.danmakuSize ?? 20), 'dmp-size-v', `${Number(st.danmakuSize ?? 20)}px`);
-      setRange('dmp-speed', Math.round((st.danmakuSpeed ?? 1) * 10), 'dmp-speed-v', `${(st.danmakuSpeed ?? 1).toFixed(1)}×`);
-      const ta = $('dmp-words-input');
-      if (ta) ta.value = String(st.dmWords || '');
-    };
-
-    dmSetBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      dmPanel.hidden = !dmPanel.hidden;
-      if (!dmPanel.hidden) { paintDmPanel(); pushDm(); }
-    });
-    document.addEventListener('click', (e) => {
-      if (dmPanel.hidden) return;
-      if (e.target.closest('#dm-panel, #ctl-dm-set')) return;
-      dmPanel.hidden = true;
-    });
-
-    dmPanel.querySelectorAll('.dmp-type').forEach((b) => {
-      b.addEventListener('click', () => {
-        const k = b.dataset.k;
-        const key = k === 'scroll' ? 'dmScroll' : k === 'fixed' ? 'dmFixed' : 'dmColor';
-        saveDm({ [key]: !(state.settings[key] !== false) });
-        paintDmPanel();
-      });
-    });
-    [['dmp-scale', 'dmScale'], ['dmp-safe', 'dmSafe'], ['dmp-smart', 'dmSmart']].forEach(([id, key]) => {
-      $(id)?.addEventListener('change', (e) => saveDm({ [key]: e.target.checked }));
-    });
-    const slider = (id, key, labelId, toVal, fmt) => {
-      const el = $(id);
-      if (!el) return;
-      el.addEventListener('input', () => {
-        const v = toVal(Number(el.value));
-        state.settings[key] = v;
-        $(labelId).textContent = fmt(v);
-        paintRange(el);
-        pushDm();
-      });
-      el.addEventListener('change', () => saveDm({ [key]: toVal(Number(el.value)) }));
-    };
-    slider('dmp-area', 'danmakuArea', 'dmp-area-v', (v) => v / 100, (v) => `${Math.round(v * 100)}%`);
-    slider('dmp-opacity', 'danmakuOpacity', 'dmp-opacity-v', (v) => v / 100, (v) => `${Math.round(v * 100)}%`);
-    slider('dmp-size', 'danmakuSize', 'dmp-size-v', (v) => v, (v) => `${v}px`);
-    slider('dmp-speed', 'danmakuSpeed', 'dmp-speed-v', (v) => v / 10, (v) => `${v.toFixed(1)}×`);
-
-    $('dmp-adv')?.addEventListener('click', () => {
-      const body = $('dmp-adv-body');
-      if (!body) return;
-      body.hidden = !body.hidden;
-      dmPanel.classList.toggle('adv-open', !body.hidden);
-    });
-    $('dmp-words')?.addEventListener('click', () => {
-      const body = $('dmp-adv-body');
-      if (body) body.hidden = false;
-      dmPanel.classList.add('adv-open');
-      const ta = $('dmp-words-input');
-      if (ta) { ta.value = String((state.settings || {}).dmWords || ''); ta.focus(); }
-    });
-    $('dmp-words-save')?.addEventListener('click', () => {
-      const ta = $('dmp-words-input');
-      const raw = String(ta ? ta.value : '').replace(/[，、;；]/g, ',');
-      saveDm({ dmWords: raw });
-      toast('屏蔽词已保存');
-    });
-    $('dmp-words-clear')?.addEventListener('click', () => {
-      const ta = $('dmp-words-input');
-      if (ta) ta.value = '';
-      saveDm({ dmWords: '' });
-      toast('已清空屏蔽词');
-    });
-    $('dmp-sync')?.addEventListener('click', () => {
-      const live = store.get('liveFilter', {}) || {};
-      const words = Array.isArray(live.words) ? live.words : [];
-      if (!words.length) return toast('直播页还没有屏蔽词');
-      const ta = $('dmp-words-input');
-      if (ta) ta.value = words.join(', ');
-      saveDm({ dmWords: words.join(', ') });
-      toast(`已同步 ${words.length} 个直播屏蔽词`);
-    });
-
-    paintDmPanel();
-  }
-  const savedRate = Number(store.get('rate', 1)) || 1;
+  if (dmSetBtn) dmSetBtn.addEventListener('click', () => bridge.playerPanel('danmaku'));
+  const dmSendBtn = $('ctl-dm-send');
+  if (dmSendBtn) dmSendBtn.addEventListener('click', () => bridge.playerPanel('send'));
+  const savedRate = Number((state.settings && state.settings.rate) || store.get('rate', 1)) || 1;
   speedIdx = Math.max(0, SPEEDS.indexOf(savedRate));
-  speed.textContent = SPEEDS[speedIdx].toFixed(2).replace(/0$/, '') + 'x';
-  speed.addEventListener('click', () => {
-    speedIdx = (speedIdx + 1) % SPEEDS.length;
-    const rate = SPEEDS[speedIdx];
-    speed.textContent = rate.toFixed(2).replace(/0$/, '') + 'x';
-    store.set('rate', rate);
-    bridge.playerCmd({ cmd: 'speed', value: rate });
-  });
+  speed.textContent = fmtRate(savedRate);
+  bridge.playerCmd({ cmd: 'speed', value: savedRate });
+  // 点开自选倍速面板（面板在播放器视图里，不会被原生层挡住）
+  speed.addEventListener('click', () => bridge.playerPanel('speed'));
 
   const savedVol = Number(state.settings && state.settings.volume);
   if (Number.isFinite(savedVol)) {
@@ -5861,6 +5697,29 @@ function bindEvents() {
   $('btn-fullscreen').addEventListener('click', () => bridge.winControl('fullscreen'));
   $('settings-close').addEventListener('click', closeSheet);
   sheet.addEventListener('click', (e) => { if (e.target === sheet) closeSheet(); });
+  // 长按 ← / →：临时 3 倍速，松开恢复
+  let arrowTimer = null;
+  state.arrowBoost = false;
+  window.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    if (state.route.name !== 'video' && state.route.name !== 'season') return;
+    if (e.repeat || arrowTimer || state.arrowBoost) return;
+    arrowTimer = setTimeout(() => {
+      arrowTimer = null;
+      state.arrowBoost = true;
+      state.arrowPrevRate = Number(state.settings.rate) || 1;
+      bridge.playerCmd({ cmd: 'speed', value: 3 });
+    }, 420);
+  });
+  window.addEventListener('keyup', (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    if (arrowTimer) { clearTimeout(arrowTimer); arrowTimer = null; }
+    if (state.arrowBoost) {
+      state.arrowBoost = false;
+      bridge.playerCmd({ cmd: 'speed', value: state.arrowPrevRate || 1 });
+    }
+  });
+
   window.addEventListener('keydown', (e) => {
     const typing = /^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName || '');
     if (e.key === 'Escape') {
@@ -5904,8 +5763,10 @@ function bindEvents() {
       if (state.route.name === 'video' || state.route.name === 'season') {
         e.preventDefault();
         if (e.key === ' ') bridge.playerCmd({ cmd: 'toggle' });
-        if (e.key === 'ArrowLeft') bridge.playerCmd({ cmd: 'back5' });
-        if (e.key === 'ArrowRight') bridge.playerCmd({ cmd: 'fwd5' });
+        else if (!e.repeat && !state.arrowBoost) {
+          // 单击：快退/快进 5 秒；长按：3 倍速（见下方 keydown 计时器）
+          bridge.playerCmd({ cmd: e.key === 'ArrowLeft' ? 'back5' : 'fwd5' });
+        }
       }
     }
   });

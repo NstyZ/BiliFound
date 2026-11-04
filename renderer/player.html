@@ -63,6 +63,77 @@
     #fs-ui input[type=range] { accent-color: #fb7299; }
     #fs-seek { flex: 1; }
     #fs-vol { width: 82px; }
+    /* 播放器内浮层（叠在视频上，半透明玻璃） */
+    #panel {
+      position: absolute; inset: 0; z-index: 60; display: flex;
+      align-items: center; justify-content: center;
+      background: rgba(0, 0, 0, .26);
+      font: 12.5px/1.5 -apple-system, "Segoe UI", "Microsoft YaHei UI", "PingFang SC", sans-serif;
+    }
+    #panel[hidden] { display: none; }
+    #panel .pc {
+      width: min(330px, 84%); max-height: 82%; overflow: auto;
+      padding: 14px 16px 16px; border-radius: 16px; color: #eef1f6;
+      background: rgba(18, 20, 28, .72);
+      border: 1px solid rgba(255, 255, 255, .16);
+      box-shadow: 0 30px 70px -24px rgba(0, 0, 0, .8);
+      -webkit-backdrop-filter: blur(22px) saturate(160%);
+      backdrop-filter: blur(22px) saturate(160%);
+    }
+    #panel header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    #panel header b { font-size: 13.5px; }
+    #pc-close {
+      width: 26px; height: 26px; border-radius: 50%; border: 0; cursor: pointer;
+      background: rgba(255, 255, 255, .12); color: #fff; font-size: 15px; line-height: 1;
+    }
+    #panel section[hidden] { display: none; }
+    #panel .lbl { color: #9aa3b2; font-size: 11.5px; margin: 2px 0 8px; }
+    #panel .types { display: flex; gap: 8px; margin-bottom: 10px; }
+    #panel .ty {
+      flex: 1; padding: 8px 4px; border-radius: 10px; cursor: pointer; font-size: 11.5px;
+      border: 1px solid rgba(255, 255, 255, .12); background: rgba(255, 255, 255, .05); color: #c6ccd8;
+    }
+    #panel .ty.on { border-color: #fb7299; background: rgba(251, 114, 153, .2); color: #fff; }
+    #panel .ck { display: flex; align-items: center; gap: 8px; padding: 5px 0; color: #c6ccd8; cursor: pointer; }
+    #panel .ck input { accent-color: #fb7299; }
+    #panel .row2 { display: flex; gap: 8px; margin: 10px 0; }
+    #panel .row2 button {
+      flex: 1; padding: 8px; border-radius: 9px; cursor: pointer; font-size: 12px;
+      border: 1px solid rgba(255, 255, 255, .12); background: rgba(255, 255, 255, .06); color: #e2e6ee;
+    }
+    #panel .row2 button:hover { background: rgba(255, 255, 255, .13); }
+    #panel .sl { display: grid; grid-template-columns: 60px 1fr 44px; gap: 8px; align-items: center; padding: 5px 0; color: #c6ccd8; }
+    #panel .sl em { font-style: normal; text-align: right; color: #9aa3b2; font-size: 11px; }
+    #panel .sl input[type=range] {
+      width: 100%; height: 4px; border-radius: 99px; appearance: none; outline: none;
+      background: linear-gradient(to right, #fb7299 0%, #fb7299 var(--p, 50%), rgba(255, 255, 255, .2) var(--p, 50%), rgba(255, 255, 255, .2) 100%);
+    }
+    #panel .sl input[type=range]::-webkit-slider-thumb {
+      appearance: none; width: 13px; height: 13px; border-radius: 50%; background: #fff;
+      box-shadow: 0 1px 6px rgba(0, 0, 0, .5), 0 0 0 3px rgba(251, 114, 153, .35); cursor: pointer;
+    }
+    #panel textarea {
+      width: 100%; margin-top: 10px; padding: 8px 10px; border-radius: 9px; resize: vertical;
+      min-height: 58px; border: 1px solid rgba(255, 255, 255, .14);
+      background: rgba(0, 0, 0, .3); color: #eef1f6; font: inherit; outline: none;
+    }
+    #panel textarea:focus { border-color: #fb7299; }
+    #panel .speeds { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    #panel .sp {
+      padding: 10px 4px; border-radius: 10px; cursor: pointer; font-size: 12px;
+      border: 1px solid rgba(255, 255, 255, .12); background: rgba(255, 255, 255, .05); color: #c6ccd8;
+    }
+    #panel .sp:hover { background: rgba(255, 255, 255, .13); }
+    #panel .sp.on { border-color: #fb7299; background: rgba(251, 114, 153, .22); color: #fff; }
+    #panel .send-row { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+    #panel #send-tip { color: #9aa3b2; font-size: 11.5px; }
+    #panel #btn-send {
+      padding: 7px 18px; border-radius: 9px; border: 0; cursor: pointer; color: #fff;
+      background: linear-gradient(135deg, #fb7299, #ff9db4); font-size: 12px;
+    }
+    #panel #btn-send:disabled { opacity: .6; cursor: default; }
+    /* 全屏栏里的附加按钮 */
+    #fs-ui .fs-text-btn { width: auto; padding: 0 10px; font-size: 11.5px; }
     #err { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; color: rgba(255,255,255,.75); font: 13px -apple-system, "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", sans-serif; text-align: center; padding: 24px; }
   </style>
 </head>
@@ -80,10 +151,52 @@
         <input id="fs-seek" type="range" min="0" max="1000" value="0" />
         <button id="fs-mute" title="静音">🔊</button>
         <input id="fs-vol" type="range" min="0" max="100" value="100" />
+        <button id="fs-dm" class="fs-text-btn" title="弹幕开关">弹</button>
+        <button id="fs-dmset" class="fs-text-btn" title="弹幕设置">⚙</button>
+        <button id="fs-speed" class="fs-text-btn" title="播放倍速">1.0x</button>
+        <button id="fs-send" class="fs-text-btn" title="发送弹幕">✎</button>
       </div>
     </div>
     <div id="loading">正在加载视频…</div>
     <div id="err"></div>
+
+    <div id="panel" hidden>
+      <div class="pc">
+        <header><b id="pc-title">弹幕设置</b><button id="pc-close" title="关闭">×</button></header>
+
+        <section id="pc-danmaku">
+          <p class="lbl">按类型过滤</p>
+          <div class="types">
+            <button class="ty on" data-k="scroll">滚动</button>
+            <button class="ty on" data-k="fixed">固定</button>
+            <button class="ty on" data-k="color">彩色</button>
+          </div>
+          <label class="ck"><input type="checkbox" id="ck-scale" /> 弹幕随屏幕缩放</label>
+          <label class="ck"><input type="checkbox" id="ck-safe" /> 防挡字幕</label>
+          <label class="ck"><input type="checkbox" id="ck-smart" /> 智能防挡弹幕</label>
+          <div class="row2">
+            <button id="btn-words">弹幕屏蔽词</button>
+            <button id="btn-sync">同步屏蔽列表</button>
+          </div>
+          <label class="sl"><span>显示区域</span><input id="sl-area" type="range" min="25" max="90" step="5" /><em id="v-area">50%</em></label>
+          <label class="sl"><span>不透明度</span><input id="sl-opacity" type="range" min="20" max="100" step="5" /><em id="v-opacity">100%</em></label>
+          <label class="sl"><span>弹幕字号</span><input id="sl-size" type="range" min="14" max="34" step="1" /><em id="v-size">20px</em></label>
+          <label class="sl"><span>弹幕速度</span><input id="sl-speed" type="range" min="6" max="20" step="1" /><em id="v-speed">1.0×</em></label>
+          <textarea id="ta-words" placeholder="屏蔽词：逗号或换行分隔" spellcheck="false"></textarea>
+        </section>
+
+        <section id="pc-speed" hidden>
+          <p class="lbl">选择播放倍速</p>
+          <div class="speeds"></div>
+        </section>
+
+        <section id="pc-send" hidden>
+          <p class="lbl">发送弹幕</p>
+          <textarea id="ta-send" placeholder="发个弹幕…（100 字以内）" spellcheck="false"></textarea>
+          <div class="send-row"><span id="send-tip"></span><button id="btn-send">发送</button></div>
+        </section>
+      </div>
+    </div>
   </div>
   <script>
     (function () {
@@ -331,6 +444,209 @@
         el.style.animationDuration = dur + 's';
         layer.appendChild(el);
         setTimeout(() => el.remove(), dur * 1000 + 200);
+      /* ================= 播放器内浮层：弹幕设置 / 倍速 / 发弹幕 ================= */
+      const panel = document.getElementById('panel');
+      const panelTitle = document.getElementById('pc-title');
+      const VIEWS = { danmaku: 'pc-danmaku', speed: 'pc-speed', send: 'pc-send' };
+      const TITLES = { danmaku: '弹幕设置', speed: '播放倍速', send: '发送弹幕' };
+
+      function showView(name) {
+        Object.keys(VIEWS).forEach((k) => { document.getElementById(VIEWS[k]).hidden = k !== name; });
+        panelTitle.textContent = TITLES[name] || '设置';
+      }
+      window.__openPanel = (name) => {
+        const n = Object.prototype.hasOwnProperty.call(VIEWS, name) ? name : 'danmaku';
+        panel.hidden = false;
+        showView(n);
+        if (n === 'danmaku') syncDmUI();
+        if (n === 'speed') markSpeed();
+        if (n === 'send') setTimeout(() => document.getElementById('ta-send').focus(), 40);
+      };
+      window.__closePanel = () => { panel.hidden = true; };
+      document.getElementById('pc-close').addEventListener('click', () => window.__closePanel());
+      panel.addEventListener('click', (e) => { if (e.target === panel) window.__closePanel(); });
+
+      /* ---- 弹幕设置 ---- */
+      const byId = (id) => document.getElementById(id);
+      const paintRange = (node) => {
+        if (!node) return;
+        const min = Number(node.min) || 0;
+        const max = Number(node.max) || 100;
+        const pct = max > min ? ((Number(node.value) - min) / (max - min)) * 100 : 0;
+        node.style.setProperty('--p', pct.toFixed(1) + '%');
+      };
+      const wordsText = () => style.words.join(', ');
+      function syncDmUI() {
+        document.querySelectorAll('#panel .ty').forEach((b) => {
+          const k = b.dataset.k;
+          const on = k === 'scroll' ? style.scroll : k === 'fixed' ? style.fixed : style.color;
+          b.classList.toggle('on', !!on);
+        });
+        byId('ck-scale').checked = !!style.scale;
+        byId('ck-safe').checked = !!style.safe;
+        byId('ck-smart').checked = !!style.smart;
+        byId('sl-area').value = String(Math.round(style.area * 100));
+        byId('sl-opacity').value = String(Math.round(style.opacity * 100));
+        byId('sl-size').value = String(Math.round(style.size));
+        byId('sl-speed').value = String(Math.round(style.speed * 10));
+        byId('v-area').textContent = Math.round(style.area * 100) + '%';
+        byId('v-opacity').textContent = Math.round(style.opacity * 100) + '%';
+        byId('v-size').textContent = Math.round(style.size) + 'px';
+        byId('v-speed').textContent = style.speed.toFixed(1) + '×';
+        ['sl-area', 'sl-opacity', 'sl-size', 'sl-speed'].forEach((id) => paintRange(byId(id)));
+        byId('ta-words').value = wordsText();
+      }
+      function pushDmConfig() {
+        if (!window.playerBridge || !window.playerBridge.dmConfig) return;
+        window.playerBridge.dmConfig({
+          danmakuOpacity: style.opacity,
+          danmakuSize: style.size,
+          danmakuSpeed: style.speed,
+          danmakuArea: style.area,
+          dmScroll: style.scroll,
+          dmFixed: style.fixed,
+          dmColor: style.color,
+          dmScale: style.scale,
+          dmSafe: style.safe,
+          dmSmart: style.smart,
+          dmWords: wordsText(),
+        });
+      }
+      function applyDm(patch) {
+        window.__setDmStyle(patch);
+        syncDmUI();
+        pushDmConfig();
+      }
+      document.querySelectorAll('#panel .ty').forEach((b) => {
+        b.addEventListener('click', () => {
+          const k = b.dataset.k;
+          const key = k === 'scroll' ? 'scroll' : k === 'fixed' ? 'fixed' : 'color';
+          applyDm({ [key]: !style[key] });
+        });
+      });
+      byId('ck-scale').addEventListener('change', (e) => applyDm({ scale: e.target.checked }));
+      byId('ck-safe').addEventListener('change', (e) => applyDm({ safe: e.target.checked }));
+      byId('ck-smart').addEventListener('change', (e) => applyDm({ smart: e.target.checked }));
+      const bindSlider = (id, valId, toVal, fmt) => {
+        const node = byId(id);
+        node.addEventListener('input', () => {
+          const v2 = toVal(Number(node.value));
+          window.__setDmStyle({
+            area: id === 'sl-area' ? v2 : style.area,
+            opacity: id === 'sl-opacity' ? v2 : style.opacity,
+            size: id === 'sl-size' ? v2 : style.size,
+            speed: id === 'sl-speed' ? v2 : style.speed,
+          });
+          byId(valId).textContent = fmt(v2);
+          paintRange(node);
+        });
+        node.addEventListener('change', () => { syncDmUI(); pushDmConfig(); });
+      };
+      bindSlider('sl-area', 'v-area', (v2) => v2 / 100, (v2) => Math.round(v2 * 100) + '%');
+      bindSlider('sl-opacity', 'v-opacity', (v2) => v2 / 100, (v2) => Math.round(v2 * 100) + '%');
+      bindSlider('sl-size', 'v-size', (v2) => v2, (v2) => Math.round(v2) + 'px');
+      bindSlider('sl-speed', 'v-speed', (v2) => v2 / 10, (v2) => v2.toFixed(1) + '×');
+      byId('btn-words').addEventListener('click', () => byId('ta-words').focus());
+      byId('ta-words').addEventListener('change', () => {
+        style.words = splitWords(byId('ta-words').value);
+        pushDmConfig();
+      });
+      byId('btn-sync').addEventListener('click', () => {
+        let list = [];
+        try { list = JSON.parse(localStorage.getItem('bg:liveFilter') || 'null') || []; } catch {}
+        const words = Array.isArray(list) ? list : (list && Array.isArray(list.words) ? list.words : []);
+        if (!words.length) { byId('ta-words').value = wordsText(); return; }
+        byId('ta-words').value = words.join(', ');
+        style.words = words.slice();
+        pushDmConfig();
+      });
+
+      /* ---- 倍速 ---- */
+      const RATES = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3];
+      const speedsBox = document.querySelector('#pc-speed .speeds');
+      let curRate = Number(v.playbackRate) || 1;
+      function markSpeed() {
+        speedsBox.querySelectorAll('.sp').forEach((b) => {
+          b.classList.toggle('on', Math.abs(Number(b.dataset.r) - curRate) < 0.001);
+        });
+        const label = curRate.toFixed(2).replace(/0$/, '') + 'x';
+        const fsBtn = document.getElementById('fs-speed');
+        if (fsBtn) fsBtn.textContent = label;
+      }
+      function setRate(rate, report) {
+        const val = Math.max(0.25, Math.min(4, Number(rate) || 1));
+        curRate = val;
+        v.playbackRate = val;
+        if (hasAudio) a.playbackRate = val;
+        markSpeed();
+        if (report !== false && window.playerBridge && window.playerBridge.rate) window.playerBridge.rate(val);
+      }
+      RATES.forEach((r) => {
+        const b = document.createElement('button');
+        b.className = 'sp';
+        b.dataset.r = String(r);
+        b.textContent = r + 'x';
+        b.addEventListener('click', () => { setRate(r); window.__closePanel(); });
+        speedsBox.appendChild(b);
+      });
+      markSpeed();
+
+      /* ---- 长按方向键 → 3 倍速 ---- */
+      let boost = false;
+      let boostFrom = 1;
+      let boostTimer = null;
+      const isArrow = (e) => e.key === 'ArrowLeft' || e.key === 'ArrowRight';
+      window.addEventListener('keydown', (e) => {
+        if (!isArrow(e) || e.repeat || boost || boostTimer) return;
+        boostTimer = setTimeout(() => {
+          boostTimer = null;
+          boostFrom = curRate;
+          boost = true;
+          setRate(3, false);
+        }, 420);
+      });
+      const endBoost = (e) => {
+        if (!isArrow(e)) return;
+        if (boostTimer) { clearTimeout(boostTimer); boostTimer = null; }
+        if (boost) { boost = false; setRate(boostFrom, false); }
+      };
+      window.addEventListener('keyup', endBoost);
+      window.addEventListener('blur', () => { if (boost) { boost = false; setRate(boostFrom, false); } });
+
+      /* ---- 发弹幕 ---- */
+      byId('btn-send').addEventListener('click', async () => {
+        const ta = byId('ta-send');
+        const text = String(ta.value || '').trim();
+        if (!text) { byId('send-tip').textContent = '先写点什么'; return; }
+        if (!(window.playerBridge && window.playerBridge.sendDanmaku)) { byId('send-tip').textContent = '发送通道不可用'; return; }
+        byId('btn-send').disabled = true;
+        byId('send-tip').textContent = '发送中…';
+        const res = await window.playerBridge.sendDanmaku({
+          text,
+          progress: Math.round((v.currentTime || 0) * 1000),
+          color: 16777215,
+          mode: 1,
+        });
+        byId('btn-send').disabled = false;
+        if (res && res.code === 0) {
+          ta.value = '';
+          byId('send-tip').textContent = '已发送';
+          danmaku.push({ time: v.currentTime || 0, text, color: 16777215, mode: 1 });
+          setTimeout(() => { if (byId('send-tip').textContent === '已发送') byId('send-tip').textContent = ''; }, 2200);
+        } else {
+          byId('send-tip').textContent = (res && (res.message || res.msg)) || '发送失败';
+        }
+      });
+
+      /* ---- 全屏栏按钮 ---- */
+      const fsDmBtn = document.getElementById('fs-dm');
+      const syncDmBtn = () => { if (fsDmBtn) fsDmBtn.textContent = window.__dmOn ? '弹' : '关'; };
+      syncDmBtn();
+      if (fsDmBtn) fsDmBtn.addEventListener('click', () => { window.__setDanmakuOn(!window.__dmOn); syncDmBtn(); });
+      document.getElementById('fs-dmset')?.addEventListener('click', () => window.__openPanel('danmaku'));
+      document.getElementById('fs-speed')?.addEventListener('click', () => window.__openPanel('speed'));
+      document.getElementById('fs-send')?.addEventListener('click', () => window.__openPanel('send'));
+
       }
       requestAnimationFrame(tick);
 
