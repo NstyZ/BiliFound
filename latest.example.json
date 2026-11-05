@@ -1,14 +1,14 @@
 {
-  "version": "1.0.2",
-  "notes": "倍速自选 + 长按三倍速；弹幕设置/倍速/发弹幕改为播放器内浮层；全屏加四个按钮；新增视频与直播发弹幕",
-  "publishedAt": "2026-11-04",
-  "url": "https://github.com/NstyZ/BiliFound/releases/download/v1.0.2/BiliFound-1.0.2-Setup-x64.exe",
-  "size": 98339029,
-  "sha256": "b0d52a6e920312fc57bba64ac3542977c4725ad81887f41a4e2d20100426464a",
-  "portableUrl": "https://github.com/NstyZ/BiliFound/releases/download/v1.0.2/BiliFound-1.0.2-Portable-x64.exe",
-  "portableSize": 98010618,
-  "portableSha256": "33f90eeee986b8f2405fb92ba4f7ea894625016b18c07564d31f873697a09254",
-  "macUrl": "https://github.com/NstyZ/BiliFound/releases/download/v1.0.2/BiliFound-1.0.2-arm64.zip",
-  "macSize": 121386582,
-  "macSha256": "8e552e2109acd82bbbc2adcfefd13205618fdb95039811bd699e232ea8d40a10"
+  "version": "1.0.3",
+  "notes": "首页切换不重复拉取、仅「换一批」刷新",
+  "publishedAt": "2026-11-05",
+  "url": "https://github.com/NstyZ/BiliFound/releases/download/v1.0.3/BiliFound-1.0.3-Setup-x64.exe",
+  "size": 98339421,
+  "sha256": "1775c9a2f2e050e7d60acfd8bdd223d96c6e9caec3f5386c6cbbb66a1e2409c4",
+  "portableUrl": "https://github.com/NstyZ/BiliFound/releases/download/v1.0.3/BiliFound-1.0.3-Portable-x64.exe",
+  "portableSize": 98010973,
+  "portableSha256": "2ccc94802305540bd68ca2859365b717c7aaface35601d0bb2ccb4db3e1ca8ed",
+  "macUrl": "https://github.com/NstyZ/BiliFound/releases/download/v1.0.3/BiliFound-1.0.3-arm64.zip",
+  "macSize": 121387139,
+  "macSha256": "1e6d1996718aca715fff94a6584889e49f10caed9cd038899649d027340451fd"
 }

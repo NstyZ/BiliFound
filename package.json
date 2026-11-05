@@ -1,7 +1,7 @@
 {
   "name": "bilifound",
   "productName": "BiliFound",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "原生界面 · 液态玻璃的 Bilibili 桌面客户端（Windows / macOS）",
   "main": "main.js",
   "author": "styzn",

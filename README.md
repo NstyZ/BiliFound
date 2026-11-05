@@ -11,7 +11,7 @@
 <img alt="platform" src="https://img.shields.io/badge/Windows_10_1809%2B_%2F_11-x64-0078D4?logo=windows&logoColor=white" />
 <img alt="macos" src="https://img.shields.io/badge/macOS-Apple_Silicon-000000?logo=apple&logoColor=white" />
 <img alt="electron" src="https://img.shields.io/badge/Electron-38.8.6-47848F?logo=electron&logoColor=white" />
-<img alt="version" src="https://img.shields.io/badge/version-1.0.2-fb7299" />
+<img alt="version" src="https://img.shields.io/badge/version-1.0.3-fb7299" />
 <img alt="use" src="https://img.shields.io/badge/use-仅供学习交流-lightgrey" />
 
 </div>

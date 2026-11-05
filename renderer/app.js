@@ -352,14 +352,7 @@ function refreshCurrent() {
   state.cache.clear();
   // 刷新后从顶部开始，不要恢复旧的滚动位置
   delete state.scrollPos[routeKey(state.route)];
-  const name = state.route.name;
-  const st = state.feeds[name === 'hot' ? 'hot' : 'home'];
-  if (st && (name === 'home' || name === 'hot')) {
-    st.pn = 0;
-    st.items = [];
-    st.done = false;
-    if (name === 'home') st.fresh = (st.fresh || 1) + 1;
-  }
+  // 首页 / 热门的内容不再随刷新手势重拉：要换内容请用右上角「换一批」
   state.feeds.search = { page: 0, items: [], done: false, q: '' };
   render();
   toast('已刷新');
@@ -939,11 +932,15 @@ function skeletons(n) {
 async function renderFeed(kind, title, sub) {
   const key = kind === 'hot' ? 'hot' : 'home';
   const st = state.feeds[key] || (state.feeds[key] = { pn: 0, items: [], done: false });
-  st.pn = 0;
-  st.items = [];
-  st.done = false;
   st.kind = kind;
-  st.heroBuilt = false;
+  // 页面来回切换时复用已加载的内容；只有「换一批」和首次进入才真正请求
+  const cached = Array.isArray(st.items) && st.items.length > 0;
+  if (!cached) {
+    st.pn = 0;
+    st.items = [];
+    st.done = false;
+    st.heroBuilt = false;
+  }
 
   const shuffleBtn = kind === 'hot'
     ? ''
@@ -953,9 +950,22 @@ async function renderFeed(kind, title, sub) {
        </button>`;
   view.innerHTML = `
     <div class="view-head"><div class="view-title">${title}</div><div class="view-sub">${sub}</div><div class="spacer"></div>${shuffleBtn}</div>
-    <div id="feed">${skeletons(10)}</div>`;
+    <div id="feed">${cached ? '' : skeletons(10)}</div>`;
   $('feed-shuffle')?.addEventListener('click', () => refreshFeed());
-  await loadMoreFeed();
+  if (cached) {
+    // 直接用内存里的列表重绘，不发请求、不闪骨架屏
+    const feed = $('feed');
+    if (feed) {
+      if (st.kind === 'home') {
+        renderHomeFeed(feed, st.items, false);
+        st.heroBuilt = true;
+      } else {
+        renderHotGrid(feed, st.items);
+      }
+    }
+  } else {
+    await loadMoreFeed();
+  }
   setInfinite(loadMoreFeed);
 }
 
@@ -1186,20 +1196,25 @@ async function loadMoreFeed() {
         renderHomeFeed(feed, st.items, !!st.heroBuilt);
         st.heroBuilt = true;
       } else {
-        const items = [...st.items].sort((a, b) => (b.stat?.view || 0) - (a.stat?.view || 0));
-        feed.innerHTML = `<div class="grid">${items.map((v, i) => cardHTML({
-          title: v.title,
-          pic: v.pic,
-          up: v.owner?.name,
-          views: fmtNum(v.stat?.view),
-          dur: fmtDur(v.duration),
-          rank: i + 1,
-        })).join('')}</div>`;
-        attachCardClicks(feed, items.map((v) => v.bvid));
+        renderHotGrid(feed, st.items);
       }
     }
   }
   state.loadingMore = false;
+}
+
+/* 热门：按播放量排序后的网格（缓存复用也走这里） */
+function renderHotGrid(feed, items) {
+  const sorted = [...items].sort((a, b) => (b.stat?.view || 0) - (a.stat?.view || 0));
+  feed.innerHTML = `<div class="grid">${sorted.map((v, i) => cardHTML({
+    title: v.title,
+    pic: v.pic,
+    up: v.owner?.name,
+    views: fmtNum(v.stat?.view),
+    dur: fmtDur(v.duration),
+    rank: i + 1,
+  })).join('')}</div>`;
+  attachCardClicks(feed, sorted.map((v) => v.bvid));
 }
 
 function attachCardClicks(root, bvids) {
