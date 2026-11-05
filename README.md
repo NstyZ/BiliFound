@@ -71,8 +71,8 @@
 
 | 文件 | 适合 |
 | --- | --- |
-| `BiliFound-1.0.2-arm64.dmg` | **推荐**：打开 dmg，把 `BiliFound.app` 拖进 Applications |
-| `BiliFound-1.0.2-arm64.zip` | **免安装**：解压后把 `BiliFound.app` 拖进「应用程序」或任意目录 |
+| `BiliFound-1.0.3-arm64.dmg` | **推荐**：打开 dmg，把 `BiliFound.app` 拖进 Applications |
+| `BiliFound-1.0.3-arm64.zip` | **免安装**：解压后把 `BiliFound.app` 拖进「应用程序」或任意目录 |
 
 > macOS 版为 **arm64 原生构建**，Apple Silicon（M 系列）机型可直接运行；不支持 Intel Mac。
 > 未签名、未公证，首次打开请**右键 →「打开」**；若仍被拦下，在终端执行：
@@ -149,7 +149,7 @@ npx electron-packager . BiliFound \
 # 3) 压缩为发布资产
 ditto -c -k --sequesterRsrc --keepParent \
   BiliFound-darwin-arm64/BiliFound.app \
-  BiliFound-1.0.2-arm64.zip
+  BiliFound-1.0.3-arm64.zip
 ```
 
 > macOS 产物不做代码签名与公证；分发给他人时对方需右键打开或放行 Gatekeeper。
