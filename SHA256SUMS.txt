@@ -1,4 +1,5 @@
 1775c9a2f2e050e7d60acfd8bdd223d96c6e9caec3f5386c6cbbb66a1e2409c4  BiliFound-1.0.3-Setup-x64.exe
 2ccc94802305540bd68ca2859365b717c7aaface35601d0bb2ccb4db3e1ca8ed  BiliFound-1.0.3-Portable-x64.exe
 aecbc28f9e1f88525c24d187041d3f58176c185e6e85dd2d4b8cf2b5b97a7e16  BiliFound-1.0.3-win32-x64.zip
+9f94c7afad1614f02ada9e2f482a145fbe2112cf21d494ceb107e5054d66ef68  BiliFound-1.0.3-arm64.dmg
 1e6d1996718aca715fff94a6584889e49f10caed9cd038899649d027340451fd  BiliFound-1.0.3-arm64.zip
